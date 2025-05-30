@@ -116,17 +116,13 @@ func _physics_process(delta: float) -> void:
 		print("freelooking:", freelook)
 		print("sliding:", sliding)
 		
-		
-	#print(crouched_collision.position.y)
-		
-		
 	# Handling movement states
 	
 	# Crouching
 	if Input.is_action_pressed("crouch") or sliding:
 		current_speed = lerp(current_speed, crouch_speed, delta * lerp_speed)
 		head.position.y = lerp(head.position.y, crouch_depth, delta * lerp_speed)
-		
+	
 		standing_collision.disabled = true
 		crouched_collision.disabled = false
 		
@@ -139,7 +135,6 @@ func _physics_process(delta: float) -> void:
 			freelook = true
 			print("slide begin")
 			
-		
 		walking = false
 		sprinting = false
 		crouched = true
@@ -159,7 +154,10 @@ func _physics_process(delta: float) -> void:
 			walking = false
 			sprinting = true
 			crouched = true
-			
+		elif Input.is_action_just_released("crouch") and is_on_floor():
+			velocity.y = jump_velocity
+			sliding = false
+			animation_player.play("jumping")
 		else:
 			# Walking
 			current_speed = lerp(current_speed, walking_speed, delta * lerp_speed)
@@ -217,10 +215,11 @@ func _physics_process(delta: float) -> void:
 		velocity += get_gravity() * delta
 
 	# Handle jump.
-	if Input.is_action_just_pressed("jump") and is_on_floor() :		#disables normal jump when crouch is pressed. idk why im doing this but i wanna see if i can make a crouch jump
-		velocity.y = jump_velocity
-		sliding = false
-		animation_player.play("jumping")
+	#if Input.is_action_pressed("jump") and is_on_floor() :		#disables normal jump when crouch is pressed. idk why im doing this but i wanna see if i can make a crouch jump
+		
+		#velocity.y = jump_velocity
+		#sliding = false
+		#animation_player.play("jumping")
 		
 	# Handle landing animations
 	if is_on_floor():
@@ -235,13 +234,12 @@ func _physics_process(delta: float) -> void:
 			elif last_velocity.y < -4.0:
 				print("regular fall")
 				animation_player.play("softlanding")
-			
-	# Get the input direction and handle the movement/deceleration.
-	# As good practice, you should replace UI actions with custom gameplay actions.
 	
-	if is_on_floor():
+	# Player movement
+	
+	if is_on_floor():		#for floor control.
 		direction = lerp(direction, (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized(), delta*lerp_speed)
-	else:
+	else:		#for air control. more floaty
 		if input_dir != Vector2.ZERO:
 			direction = lerp(direction, (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized(), delta*air_lerp)
 	
@@ -257,6 +255,6 @@ func _physics_process(delta: float) -> void:
 		velocity.x = move_toward(velocity.x, 0, current_speed)
 		velocity.z = move_toward(velocity.z, 0, current_speed)
 	
-	last_velocity = velocity
+	last_velocity = velocity	# used to see how hard the player lands.
 	
 	move_and_slide()
