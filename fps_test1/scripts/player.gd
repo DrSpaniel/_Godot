@@ -64,6 +64,8 @@ var freelook_angle = 8
 
 var last_velocity = Vector3.ZERO
 
+var horizontal_velocity = Vector2(velocity.x, velocity.z)
+
 
 # Input vars
 
@@ -106,7 +108,7 @@ func _input(event):
 func _physics_process(delta: float) -> void:
 	#getting movement input
 	var input_dir := Input.get_vector("left", "right", "forward", "backward")
-	
+	horizontal_velocity = Vector2(velocity.x, velocity.z)
 	
 	if Input.is_action_just_pressed("debug"):
 		print("-------DEBUG-------")
@@ -115,6 +117,10 @@ func _physics_process(delta: float) -> void:
 		print("crouched:", crouched)
 		print("freelooking:", freelook)
 		print("sliding:", sliding)
+		print("velocity.y:", velocity.y)
+		print("velocity.x:", velocity.x)
+		print("velocity.x:", velocity.z)
+		print("horiz velocity", horizontal_velocity.length())
 		
 	# Handling movement states
 	
@@ -152,10 +158,12 @@ func _physics_process(delta: float) -> void:
 			current_speed = lerp(current_speed, sprint_speed, delta * lerp_speed)
 			
 			walking = false
-			sprinting = true
+			if horizontal_velocity.length() > 7:		#this is here cause i wanna allow sliding to happen not just when sprinting. like TF2
+				sprinting = true
 			crouched = true
 		elif Input.is_action_just_released("crouch") and is_on_floor():
 			velocity.y = jump_velocity
+			print("jump")
 			sliding = false
 			animation_player.play("jumping")
 		else:
@@ -184,31 +192,33 @@ func _physics_process(delta: float) -> void:
 	
 	if sliding:
 		slide_timer -= delta
-		if slide_timer <= 0 or Input.is_action_just_pressed("jump"):
+		if slide_timer <= 0 or Input.is_action_just_released("crouch"):
+			velocity.y = jump_velocity
+			animation_player.play("jumping")	#fix this: player jumps when slide ends
 			sliding = false
 			print("slide end")
 			freelook = false
 	
 	# Handle headbob
-	if sprinting:
-		headbob_intensity = headbob_sprint_intensity
-		headbob_index += headbob_sprint_speed * delta
-	elif walking:
-		headbob_intensity = headbob_walk_intensity
-		headbob_index += headbob_walk_speed * delta
-	elif crouched:
-		headbob_intensity = headbob_crouch_intensity
-		headbob_index += headbob_crouch_speed * delta
-	
-	if is_on_floor() and !sliding and input_dir != Vector2.ZERO:
-		headbob_vector.y = sin(headbob_index)
-		headbob_vector.x = sin(headbob_index/2) + 0.5
-		
-		eyes.position.y = lerp(eyes.position.y, headbob_vector.y * (headbob_intensity/2), delta*lerp_speed)
-		eyes.position.x = lerp(eyes.position.x, headbob_vector.x * (headbob_intensity), delta*lerp_speed)
-	else:
-		eyes.position.y = lerp(eyes.position.y, 0.0, delta*lerp_speed)
-		eyes.position.x = lerp(eyes.position.x, 0.0, delta*lerp_speed)
+	#if sprinting:
+		#headbob_intensity = headbob_sprint_intensity
+		#headbob_index += headbob_sprint_speed * delta
+	#elif walking:
+		#headbob_intensity = headbob_walk_intensity
+		#headbob_index += headbob_walk_speed * delta
+	#elif crouched:
+		#headbob_intensity = headbob_crouch_intensity
+		#headbob_index += headbob_crouch_speed * delta
+	#
+	#if is_on_floor() and !sliding and input_dir != Vector2.ZERO:
+		#headbob_vector.y = sin(headbob_index)
+		#headbob_vector.x = sin(headbob_index/2) + 0.5
+		#
+		#eyes.position.y = lerp(eyes.position.y, headbob_vector.y * (headbob_intensity/2), delta*lerp_speed)
+		#eyes.position.x = lerp(eyes.position.x, headbob_vector.x * (headbob_intensity), delta*lerp_speed)
+	#else:
+		#eyes.position.y = lerp(eyes.position.y, 0.0, delta*lerp_speed)
+		#eyes.position.x = lerp(eyes.position.x, 0.0, delta*lerp_speed)
 	
 	# Add the gravity.
 	if not is_on_floor():
