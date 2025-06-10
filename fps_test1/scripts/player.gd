@@ -34,8 +34,12 @@ var last_velocity = Vector3.ZERO
 
 var horizontal_velocity = Vector2(velocity.x, velocity.z)
 
-const minjump_velocity = 4.5
+const minjump_velocity = 7
+const maxjump_velocity = 10.0
+const maxhold_time = 0.5 #in seconds
 
+var jumphold_time = 0.0
+var isholding_jump = false
 
 # Headbob vars
 
@@ -100,6 +104,7 @@ func _input(event):
 			get_viewport().set_input_as_handled()
 		mouseinput = true
 		
+	
 	if mouseinput == true:
 		if event is InputEventMouseMotion:
 			if freelook:
@@ -158,6 +163,7 @@ func _physics_process(delta: float) -> void:
 		
 		head.position.y = lerp(head.position.y, 0.0, delta * lerp_speed)
 		
+		print("can sprint, jump")
 		if Input.is_action_pressed("sprint"):
 			# Sprinting
 			current_speed = lerp(current_speed, sprint_speed, delta * lerp_speed)
@@ -166,9 +172,9 @@ func _physics_process(delta: float) -> void:
 				sprinting = true
 				crouched = true
 			
-		elif Input.is_action_just_released("crouch") and is_on_floor():
+		elif Input.is_action_just_released("crouch") and is_on_floor():		#im pretty sure this is getting broken by the above sprint thing, when i jump while in a slide and also holding sprint it does not jump.;
 			velocity.y = minjump_velocity
-			print("jump!")
+			print("jump")
 			sliding = false
 			animation_player.play("jumping")
 		else:
@@ -196,11 +202,15 @@ func _physics_process(delta: float) -> void:
 	
 	if sliding:
 		slide_timer -= delta
-		if slide_timer <= 0:
+		if slide_timer <= 0 or Input.is_action_just_released("crouch"):
+		#make directional boost
+			velocity.y = minjump_velocity
+			
+			print("jump")
+			animation_player.play("jumping")
 			sliding = false
 			print("slide end")
 			freelook = false
-
 	
 	 #Handle headbob
 	if sprinting:
