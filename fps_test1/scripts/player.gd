@@ -34,12 +34,13 @@ var last_velocity = Vector3.ZERO
 
 var horizontal_velocity = Vector2(velocity.x, velocity.z)
 
-const minjump_velocity = 7
-const maxjump_velocity = 10.0
-const maxhold_time = 0.5 #in seconds
+const jump_velocity = 7
 
-var jumphold_time = 0.0
-var isholding_jump = false
+var crouch_counter = 0.0
+var min_crouch_counter = 5.0
+var max_crouch_counter = 10.0
+var is_charging = false
+
 
 # Headbob vars
 
@@ -138,12 +139,19 @@ func _physics_process(delta: float) -> void:
 	if Input.is_action_pressed("crouch") or sliding:
 		current_speed = lerp(current_speed, crouch_speed, delta * lerp_speed)
 		head.position.y = lerp(head.position.y, crouch_depth, delta * lerp_speed)
-	
 		standing_collision.disabled = true
 		crouched_collision.disabled = false
 		
-		#slide begin logic
+		if is_on_floor():
+			is_charging = true
+			crouch_counter += delta * 10.0
+			if crouch_counter > max_crouch_counter:
+				crouch_counter = max_crouch_counter
+			elif crouch_counter < min_crouch_counter:
+				crouch_counter = min_crouch_counter
+			print("crouch:", int(crouch_counter))	
 		
+		#slide begin logic
 		if (sprinting and input_dir != Vector2.ZERO and is_on_floor()):		#i think this should have if horizontal_velocity.length() > 7 but when i put it, it runs infinitely instead of one time. gotta fix that
 			sliding = true
 			slide_timer = slide_timer_max
@@ -163,7 +171,7 @@ func _physics_process(delta: float) -> void:
 		
 		head.position.y = lerp(head.position.y, 0.0, delta * lerp_speed)
 		
-		print("can sprint, jump")
+		#print("can sprint, jump")
 		if Input.is_action_pressed("sprint"):
 			# Sprinting
 			current_speed = lerp(current_speed, sprint_speed, delta * lerp_speed)
@@ -173,10 +181,7 @@ func _physics_process(delta: float) -> void:
 				crouched = true
 			
 		elif Input.is_action_just_released("crouch") and is_on_floor():		#im pretty sure this is getting broken by the above sprint thing, when i jump while in a slide and also holding sprint it does not jump.;
-			velocity.y = minjump_velocity
-			print("jump")
-			sliding = false
-			animation_player.play("jumping")
+			do_jump(crouch_counter)
 		else:
 			# Walking
 			current_speed = lerp(current_speed, walking_speed, delta * lerp_speed)
@@ -202,15 +207,14 @@ func _physics_process(delta: float) -> void:
 	
 	if sliding:
 		slide_timer -= delta
-		if slide_timer <= 0 or Input.is_action_just_released("crouch"):
-		#make directional boost
-			velocity.y = minjump_velocity
-			
-			print("jump")
-			animation_player.play("jumping")
+		if slide_timer <= 0:
+			print("slide end via timer")
 			sliding = false
-			print("slide end")
 			freelook = false
+		elif Input.is_action_just_released("crouch"):		#this should call a jump function for ease
+			print("slide end via jump release")
+			freelook = false
+			do_jump(crouch_counter)
 	
 	 #Handle headbob
 	if sprinting:
@@ -237,18 +241,12 @@ func _physics_process(delta: float) -> void:
 	if not is_on_floor():
 		velocity += get_gravity() * delta
 
-	# Handle jump.
-	#if Input.is_action_pressed("jump") and is_on_floor() :		#disables normal jump when crouch is pressed. idk why im doing this but i wanna see if i can make a crouch jump
 		
-		#velocity.y = jump_velocity
-		#sliding = false
-		#animation_player.play("jumping")
-		
-	# Handle landing animations
+	#Handle landing animations
 	if is_on_floor():
 		if last_velocity.y < 0.0:
 			print(last_velocity.y)		#when landing shows how hard we just landed. can be used to determine how the screenshake is.
-			if last_velocity.y < -10.0:	#when velocity goes past -10
+			if last_velocity.y < -12.0:	#when velocity goes past -10
 				print("roll")
 				animation_player.play("roll")
 			elif last_velocity.y < -7.0:
@@ -281,3 +279,13 @@ func _physics_process(delta: float) -> void:
 	last_velocity = velocity	# used to see how hard the player lands.
 	
 	move_and_slide()
+
+func do_jump(charge):
+	print("jumping via function")
+	print("crouch:", int(charge))
+	
+	velocity.y = jump_velocity * charge/10	#YESSSSS!!!!!! THIS WORKS!!!!!!!!!!!!
+	sliding = false
+	is_charging = false
+	animation_player.play("jumping")
+	crouch_counter = 0.0
