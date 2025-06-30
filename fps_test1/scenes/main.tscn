@@ -236,6 +236,12 @@ use_collision = true
 size = Vector3(20, 1, 20)
 material = SubResource("StandardMaterial3D_k0juu")
 
+[node name="cieling2" type="CSGBox3D" parent="stage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.5, 256.787, 0.0209999)
+use_collision = true
+size = Vector3(3, 509.9, 20)
+material = SubResource("StandardMaterial3D_k0juu")
+
 [node name="env" type="Node3D" parent="."]
 
 [node name="WorldEnvironment" type="WorldEnvironment" parent="env"]

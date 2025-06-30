@@ -38,7 +38,7 @@ const jump_velocity = 7
 
 var crouch_counter = 0.0
 var min_crouch_counter = 5.0
-var max_crouch_counter = 10.0
+var max_crouch_counter = 11.0
 var is_charging = false
 
 
@@ -136,7 +136,7 @@ func _physics_process(delta: float) -> void:
 	# Handling movement states
 	
 	# Crouching
-	if Input.is_action_pressed("crouch") or sliding:
+	if is_on_floor() and Input.is_action_pressed("crouch") or sliding:			#made this only if on floor cause i need a different type of crouch logic to have crouch jumping
 		current_speed = lerp(current_speed, crouch_speed, delta * lerp_speed)
 		head.position.y = lerp(head.position.y, crouch_depth, delta * lerp_speed)
 		standing_collision.disabled = true
@@ -163,6 +163,8 @@ func _physics_process(delta: float) -> void:
 		sprinting = false
 		crouched = true
 		
+	elif ray_cast_3d.is_colliding():
+		crouch_counter = 0.0
 	elif !ray_cast_3d.is_colliding():
 		# Uncrouching / Standing
 		
@@ -174,11 +176,15 @@ func _physics_process(delta: float) -> void:
 		#print("can sprint, jump")
 		if Input.is_action_pressed("sprint"):
 			# Sprinting
-			current_speed = lerp(current_speed, sprint_speed, delta * lerp_speed)
-			if horizontal_velocity.length() > 7:		#this is here cause i wanna allow sliding to happen not just when sprinting. like TF2
-				walking = false
-				sprinting = true
-				crouched = true
+			if is_on_floor():
+				current_speed = lerp(current_speed, sprint_speed, delta * lerp_speed/4)
+				if horizontal_velocity.length() > 7:		#this is here cause i wanna allow sliding to happen not just when sprinting. like TF2
+					walking = false
+					sprinting = true
+					crouched = true
+					print("can sprint")
+				else:
+					print("cant't sprint")
 			
 		elif Input.is_action_just_released("crouch") and is_on_floor():		#im pretty sure this is getting broken by the above sprint thing, when i jump while in a slide and also holding sprint it does not jump.;
 			do_jump(crouch_counter)
@@ -240,6 +246,11 @@ func _physics_process(delta: float) -> void:
 	# Add the gravity.
 	if not is_on_floor():
 		velocity += get_gravity() * delta
+		if Input.is_action_just_pressed("crouch"):		#cant fix this.... yet
+			print("crouchJump")			
+		elif Input.is_action_just_released("crouch"):
+			print("crouchJumpRelease")
+
 
 		
 	#Handle landing animations
@@ -281,10 +292,10 @@ func _physics_process(delta: float) -> void:
 	move_and_slide()
 
 func do_jump(charge):
-	print("jumping via function")
 	print("crouch:", int(charge))
 	
-	velocity.y = jump_velocity * charge/10	#YESSSSS!!!!!! THIS WORKS!!!!!!!!!!!!
+	#velocity.y = jump_velocity * charge/10	#YESSSSS!!!!!! THIS WORKS!!!!!!!!!!!!
+	velocity.y = jump_velocity * 6.8/10		#to make sure crouch jumping works, putting this here so i can have something solid to work with
 	sliding = false
 	is_charging = false
 	animation_player.play("jumping")
