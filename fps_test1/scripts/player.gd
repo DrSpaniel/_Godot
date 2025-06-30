@@ -7,6 +7,7 @@ extends CharacterBody3D
 @onready var eyes: Node3D = $neck/head/eyes
 @onready var standing_collision: CollisionShape3D = $standing_collision
 @onready var crouched_collision: CollisionShape3D = $crouched_collision
+@onready var crouchjump_collision: CollisionShape3D = $crouchjump_collision
 @onready var ray_cast_3d: RayCast3D = $RayCast3D
 @onready var camera_3d: Camera3D = $neck/head/eyes/Camera3D
 @onready var animation_player: AnimationPlayer = $neck/head/eyes/AnimationPlayer
@@ -246,10 +247,20 @@ func _physics_process(delta: float) -> void:
 	# Add the gravity.
 	if not is_on_floor():
 		velocity += get_gravity() * delta
-		if Input.is_action_just_pressed("crouch"):		#cant fix this.... yet
-			print("crouchJump")			
+		
+		if Input.is_action_pressed("crouch"):		#FIXED!!!!!!! but now there needs to be a raycast checker for the floor bug
+			print("crouchJump")
+			crouchjump_collision.disabled = false
+			standing_collision.disabled = true
 		elif Input.is_action_just_released("crouch"):
 			print("crouchJumpRelease")
+			crouchjump_collision.disabled = true
+			standing_collision.disabled = false
+	elif ray_cast_3d.is_colliding():
+			crouched_collision.disabled = true
+			crouchjump_collision.disabled = true
+			standing_collision.disabled = false
+
 
 
 		
@@ -294,8 +305,7 @@ func _physics_process(delta: float) -> void:
 func do_jump(charge):
 	print("crouch:", int(charge))
 	
-	#velocity.y = jump_velocity * charge/10	#YESSSSS!!!!!! THIS WORKS!!!!!!!!!!!!
-	velocity.y = jump_velocity * 6.8/10		#to make sure crouch jumping works, putting this here so i can have something solid to work with
+	velocity.y = jump_velocity * charge/10	#YESSSSS!!!!!! THIS WORKS!!!!!!!!!!!!
 	sliding = false
 	is_charging = false
 	animation_player.play("jumping")

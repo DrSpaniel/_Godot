@@ -1,4 +1,4 @@
-[gd_scene load_steps=16 format=3 uid="uid://cjbikouypipmf"]
+[gd_scene load_steps=17 format=3 uid="uid://cjbikouypipmf"]
 
 [ext_resource type="Texture2D" uid="uid://dfp06ckqptyhw" path="res://assets/textures/dev/grids/Dark/texture_07.png" id="1_0wfyh"]
 [ext_resource type="Texture2D" uid="uid://bf5whxdc6f0y3" path="res://assets/hdris/kloofendal_48d_partly_cloudy_puresky_2k.hdr" id="2_sugp2"]
@@ -21,6 +21,9 @@ tonemap_mode = 2
 glow_enabled = true
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sugp2"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_tbgi4"]
+height = 1.0
 
 [sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jyhfs"]
 height = 1.2
@@ -230,6 +233,12 @@ use_collision = true
 size = Vector3(1, 2.7, 1)
 material = SubResource("StandardMaterial3D_k0juu")
 
+[node name="box7" type="CSGBox3D" parent="stage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 2, 2, 6)
+use_collision = true
+size = Vector3(1, 4, 1)
+material = SubResource("StandardMaterial3D_k0juu")
+
 [node name="cieling" type="CSGBox3D" parent="stage"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.33657, -12.579)
 use_collision = true
@@ -257,6 +266,11 @@ script = ExtResource("3_sugp2")
 [node name="standing_collision" type="CollisionShape3D" parent="player"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 shape = SubResource("CapsuleShape3D_sugp2")
+
+[node name="crouchjump_collision" type="CollisionShape3D" parent="player"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0)
+shape = SubResource("CapsuleShape3D_tbgi4")
+disabled = true
 
 [node name="crouched_collision" type="CollisionShape3D" parent="player"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.6, 0)
