@@ -37,6 +37,13 @@ var horizontal_velocity = Vector2(velocity.x, velocity.z)
 
 const jump_velocity = 7
 
+#TEST VARS
+
+const crouch_translate = 0.7
+const crouch_jump_add = crouch_translate * 0.9 # 0.9 for sourcelike camera jitter in air on crouch, makes for a nice notifier
+var is_crouched := false
+#END TEST VARS
+
 var crouch_counter = 0.0
 var min_crouch_counter = 5.0
 var max_crouch_counter = 11.0
@@ -139,9 +146,9 @@ func _physics_process(delta: float) -> void:
 	# Crouching
 	if is_on_floor() and Input.is_action_pressed("crouch") or sliding:			#made this only if on floor cause i need a different type of crouch logic to have crouch jumping
 		current_speed = lerp(current_speed, crouch_speed, delta * lerp_speed)
-		head.position.y = lerp(head.position.y, crouch_depth, delta * lerp_speed)
+		head.position.y = lerp(head.position.y, crouch_depth, delta * lerp_speed)		#this moved the head camera down
 		standing_collision.disabled = true
-		crouched_collision.disabled = false
+		crouched_collision.disabled = false		#change these two to changing the player height.y
 		
 		if is_on_floor():
 			is_charging = true
@@ -153,7 +160,7 @@ func _physics_process(delta: float) -> void:
 			print("crouch:", int(crouch_counter))	
 		
 		#slide begin logic
-		if (sprinting and input_dir != Vector2.ZERO and is_on_floor()):		#i think this should have if horizontal_velocity.length() > 7 but when i put it, it runs infinitely instead of one time. gotta fix that
+		if (horizontal_velocity.length() > 7 and sprinting and input_dir != Vector2.ZERO and is_on_floor()):		#i think this should have if horizontal_velocity.length() > 7 but when i put it, it runs infinitely instead of one time. gotta fix that
 			sliding = true
 			slide_timer = slide_timer_max
 			slide_vector = input_dir
@@ -170,7 +177,7 @@ func _physics_process(delta: float) -> void:
 		# Uncrouching / Standing
 		
 		standing_collision.disabled = false
-		crouched_collision.disabled = true
+		crouched_collision.disabled = true		#change these two to changing the player height.y in a function?
 		
 		head.position.y = lerp(head.position.y, 0.0, delta * lerp_speed)
 		
@@ -182,11 +189,10 @@ func _physics_process(delta: float) -> void:
 				if horizontal_velocity.length() > 7:		#this is here cause i wanna allow sliding to happen not just when sprinting. like TF2
 					walking = false
 					sprinting = true
-					crouched = true
+					crouched = false
 					print("can sprint")
 				else:
-					print("cant't sprint")
-			
+					print("can't sprint")
 		elif Input.is_action_just_released("crouch") and is_on_floor():		#im pretty sure this is getting broken by the above sprint thing, when i jump while in a slide and also holding sprint it does not jump.;
 			do_jump(crouch_counter)
 		else:
@@ -250,16 +256,8 @@ func _physics_process(delta: float) -> void:
 		
 		if Input.is_action_pressed("crouch"):		#FIXED!!!!!!! but now there needs to be a raycast checker for the floor bug
 			print("crouchJump")
-			crouchjump_collision.disabled = false
-			standing_collision.disabled = true
 		elif Input.is_action_just_released("crouch"):
 			print("crouchJumpRelease")
-			crouchjump_collision.disabled = true
-			standing_collision.disabled = false
-	elif ray_cast_3d.is_colliding():
-			crouched_collision.disabled = true
-			crouchjump_collision.disabled = true
-			standing_collision.disabled = false
 
 
 
