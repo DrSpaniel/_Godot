@@ -20,14 +20,6 @@ sky = SubResource("Sky_qfnet")
 tonemap_mode = 2
 glow_enabled = true
 
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sugp2"]
-
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_tbgi4"]
-height = 1.0
-
-[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jyhfs"]
-height = 1.2
-
 [sub_resource type="Animation" id="Animation_jyhfs"]
 length = 0.001
 tracks/0/type = "value"
@@ -176,12 +168,32 @@ _data = {
 &"softlanding": SubResource("Animation_o6xl0")
 }
 
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_sugp2"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_tbgi4"]
+height = 1.0
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_jyhfs"]
+height = 1.2
+
 [node name="world" type="Node3D"]
 
 [node name="stage" type="Node3D" parent="."]
 
 [node name="floor" type="CSGBox3D" parent="stage"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, -0.5, 0)
+use_collision = true
+size = Vector3(26, 1, 20)
+material = SubResource("StandardMaterial3D_k0juu")
+
+[node name="floor6" type="CSGBox3D" parent="stage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 8, -0.5, -25)
+use_collision = true
+size = Vector3(16, 1, 30)
+material = SubResource("StandardMaterial3D_k0juu")
+
+[node name="floor5" type="CSGBox3D" parent="stage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 3, -0.5, 43)
 use_collision = true
 size = Vector3(26, 1, 20)
 material = SubResource("StandardMaterial3D_k0juu")
@@ -246,15 +258,27 @@ size = Vector3(1, 4, 1)
 material = SubResource("StandardMaterial3D_k0juu")
 
 [node name="cieling" type="CSGBox3D" parent="stage"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 2.33657, -12.579)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -4.5, 2.33657, -12.579)
 use_collision = true
-size = Vector3(20, 1, 20)
+size = Vector3(11, 1, 20)
 material = SubResource("StandardMaterial3D_k0juu")
 
 [node name="cieling2" type="CSGBox3D" parent="stage"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.5, 256.787, 0.0209999)
 use_collision = true
 size = Vector3(3, 509.9, 20)
+material = SubResource("StandardMaterial3D_k0juu")
+
+[node name="cieling3" type="CSGBox3D" parent="stage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.5, 4.42141, 25.021)
+use_collision = true
+size = Vector3(3, 8.83115, 30)
+material = SubResource("StandardMaterial3D_k0juu")
+
+[node name="cieling4" type="CSGBox3D" parent="stage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 14.5, 4.42141, -24.979)
+use_collision = true
+size = Vector3(3, 8.83115, 30)
 material = SubResource("StandardMaterial3D_k0juu")
 
 [node name="env" type="Node3D" parent="."]
@@ -269,6 +293,20 @@ shadow_enabled = true
 [node name="player" type="CharacterBody3D" parent="."]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 3.3, 0, 0)
 script = ExtResource("3_sugp2")
+
+[node name="neck" type="Node3D" parent="player"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
+
+[node name="head" type="Node3D" parent="player/neck"]
+
+[node name="eyes" type="Node3D" parent="player/neck/head"]
+
+[node name="Camera3D" type="Camera3D" parent="player/neck/head/eyes"]
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="player/neck/head/eyes"]
+libraries = {
+&"": SubResource("AnimationLibrary_tbgi4")
+}
 
 [node name="standing_collision" type="CollisionShape3D" parent="player"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
@@ -286,18 +324,3 @@ disabled = true
 
 [node name="RayCast3D" type="RayCast3D" parent="player"]
 target_position = Vector3(0, 2, 0)
-
-[node name="neck" type="Node3D" parent="player"]
-unique_name_in_owner = true
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
-
-[node name="head" type="Node3D" parent="player/neck"]
-
-[node name="eyes" type="Node3D" parent="player/neck/head"]
-
-[node name="Camera3D" type="Camera3D" parent="player/neck/head/eyes"]
-
-[node name="AnimationPlayer" type="AnimationPlayer" parent="player/neck/head/eyes"]
-libraries = {
-&"": SubResource("AnimationLibrary_tbgi4")
-}

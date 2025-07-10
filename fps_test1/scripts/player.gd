@@ -37,17 +37,17 @@ var horizontal_velocity = Vector2(velocity.x, velocity.z)
 
 const jump_velocity = 7
 
-#TEST VARS
-
-const crouch_translate = 0.7
-const crouch_jump_add = crouch_translate * 0.9 # 0.9 for sourcelike camera jitter in air on crouch, makes for a nice notifier
-var is_crouched := false
-#END TEST VARS
-
 var crouch_counter = 0.0
 var min_crouch_counter = 5.0
 var max_crouch_counter = 11.0
 var is_charging = false
+
+# Wallrun vars
+
+var wallrunPrint = false
+var is_wallrunning = false
+var wallruncounter = 0.0
+var max_wallruncounter = 1.5	#delta counts starting from 0.... so this is actually 3 seconds
 
 
 # Headbob vars
@@ -75,6 +75,7 @@ var current_speed = 5.0
 const walking_speed = 5.0
 const sprint_speed = 8.0
 const crouch_speed = 3.0
+var wallrun_speed = 20.0
 
 # Movement vars
 
@@ -129,6 +130,10 @@ func _physics_process(delta: float) -> void:
 	var input_dir := Input.get_vector("left", "right", "forward", "backward")
 	horizontal_velocity = Vector2(velocity.x, velocity.z)
 	
+	
+	#wallruncounter += delta
+	#print("wallrun timer:", int(wallruncounter))
+	
 	if Input.is_action_just_pressed("debug"):
 		print("-------DEBUG-------")
 		print("walking:", walking)
@@ -140,8 +145,36 @@ func _physics_process(delta: float) -> void:
 		print("velocity.x:", velocity.x)
 		print("velocity.x:", velocity.z)
 		print("horiz velocity", horizontal_velocity.length())
+		print(get_gravity())
+	
+	if Input.is_action_just_pressed("reset"):		#in case you fall off.... idiot
+		global_position = Vector3.ZERO
+		velocity = Vector3.ZERO
+		rotation = Vector3.ZERO
+		head.rotation = Vector3.ZERO
 		
 	# Handling movement states
+	
+	#Wall... run?
+	
+	if is_on_wall_only():	#triggers when player is only touching a wall, and nothing else. great start for the wallrun!
+		wallruncounter += delta
+		print(wallruncounter)
+		
+		if wallruncounter < max_wallruncounter and input_dir != Vector2.ZERO:
+			is_wallrunning = true
+		else: 
+			is_wallrunning = false
+		
+		if not wallrunPrint:
+			print("touching wall!")
+			wallrunPrint = true
+	else:
+		wallrunPrint = false
+		is_wallrunning = false
+		wallruncounter = 0.0
+	
+	
 	
 	# Crouching
 	if is_on_floor() and Input.is_action_pressed("crouch") or sliding:			#made this only if on floor cause i need a different type of crouch logic to have crouch jumping
@@ -181,8 +214,9 @@ func _physics_process(delta: float) -> void:
 		
 		head.position.y = lerp(head.position.y, 0.0, delta * lerp_speed)
 		
-		#print("can sprint, jump")
-		if Input.is_action_pressed("sprint"):
+		if Input.is_action_just_released("crouch") and is_on_floor():		#im pretty sure this is getting broken by the above sprint thing, FIXED!!!!!!! jump takes priority over sprint
+			do_jump(crouch_counter)
+		elif Input.is_action_pressed("sprint"):
 			# Sprinting
 			if is_on_floor():
 				current_speed = lerp(current_speed, sprint_speed, delta * lerp_speed/4)
@@ -193,8 +227,6 @@ func _physics_process(delta: float) -> void:
 					print("can sprint")
 				else:
 					print("can't sprint")
-		elif Input.is_action_just_released("crouch") and is_on_floor():		#im pretty sure this is getting broken by the above sprint thing, when i jump while in a slide and also holding sprint it does not jump.;
-			do_jump(crouch_counter)
 		else:
 			# Walking
 			current_speed = lerp(current_speed, walking_speed, delta * lerp_speed)
@@ -252,29 +284,31 @@ func _physics_process(delta: float) -> void:
 	
 	# Add the gravity.
 	if not is_on_floor():
-		velocity += get_gravity() * delta
-		
-		if Input.is_action_pressed("crouch"):		#FIXED!!!!!!! but now there needs to be a raycast checker for the floor bug
-			print("crouchJump")
-		elif Input.is_action_just_released("crouch"):
-			print("crouchJumpRelease")
-
+		if !is_wallrunning:
+			velocity += get_gravity() * delta
+			if Input.is_action_pressed("crouch"):		#FIXED!!!!!!! but now there needs to be a raycast checker for the floor bug
+				print("crouchJump")
+			elif Input.is_action_just_released("crouch"):
+				print("crouchJumpRelease")
+		else:
+			velocity.y = 0.0		#super jank. just illediatley halts vertical velocity when touching a wall in the air.
+			current_speed = lerp(current_speed, wallrun_speed, delta * lerp_speed)
 
 
 		
 	#Handle landing animations
-	if is_on_floor():
-		if last_velocity.y < 0.0:
-			print(last_velocity.y)		#when landing shows how hard we just landed. can be used to determine how the screenshake is.
-			if last_velocity.y < -12.0:	#when velocity goes past -10
-				print("roll")
-				animation_player.play("roll")
-			elif last_velocity.y < -7.0:
-				print("hard fall")
-				animation_player.play("hardlanding")
-			elif last_velocity.y < -4.0:
-				print("regular fall")
-				animation_player.play("softlanding")
+	#if is_on_floor():
+		#if last_velocity.y < 0.0:
+			#print(last_velocity.y)		#when landing shows how hard we just landed. can be used to determine how the screenshake is.
+			#if last_velocity.y < -12.0:	#when velocity goes past -10
+				#print("roll")
+				#animation_player.play("roll")
+			#elif last_velocity.y < -7.0:
+				#print("hard fall")
+				#animation_player.play("hardlanding")
+			#elif last_velocity.y < -4.0:
+				#print("regular fall")
+				#animation_player.play("softlanding")
 	
 	# Player movement
 	
