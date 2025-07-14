@@ -47,8 +47,8 @@ var is_charging = false
 var wallrunPrint = false
 var is_wallrunning = false
 var wallruncounter = 0.0
-var max_wallruncounter = 1.5	#delta counts starting from 0.... so this is actually 3 seconds
-
+var max_wallruncounter = 3	#delta counts starting from 0.... so this is actually 3 seconds
+var wallrunvelocityset = false
 
 # Headbob vars
 
@@ -154,27 +154,6 @@ func _physics_process(delta: float) -> void:
 		head.rotation = Vector3.ZERO
 		
 	# Handling movement states
-	
-	#Wall... run?
-	
-	if is_on_wall_only():	#triggers when player is only touching a wall, and nothing else. great start for the wallrun!
-		wallruncounter += delta
-		print(wallruncounter)
-		
-		if wallruncounter < max_wallruncounter and input_dir != Vector2.ZERO:
-			is_wallrunning = true
-		else: 
-			is_wallrunning = false
-		
-		if not wallrunPrint:
-			print("touching wall!")
-			wallrunPrint = true
-	else:
-		wallrunPrint = false
-		is_wallrunning = false
-		wallruncounter = 0.0
-	
-	
 	
 	# Crouching
 	if is_on_floor() and Input.is_action_pressed("crouch") or sliding:			#made this only if on floor cause i need a different type of crouch logic to have crouch jumping
@@ -291,10 +270,18 @@ func _physics_process(delta: float) -> void:
 			elif Input.is_action_just_released("crouch"):
 				print("crouchJumpRelease")
 		else:
-			velocity.y = 0.0		#super jank. just illediatley halts vertical velocity when touching a wall in the air.
-			current_speed = lerp(current_speed, wallrun_speed, delta * lerp_speed)
-
-
+			if wallruncounter < 2.2:
+				if !wallrunvelocityset:
+					velocity.y = 0.0		#super jank. just illediatley halts vertical velocity when touching a wall in the air.
+				wallrunvelocityset = true
+				
+				current_speed = lerp(current_speed, wallrun_speed, delta * lerp_speed)
+			else:
+				print("beginning descent")
+				velocity += get_gravity()/3 * delta
+			#if Input.is_action_just_pressed("jump"):
+				#do_jump(10)		#for the wallkick to be done right, there needs to be a force applied away from the wall at the same time do jump is done. just enough to push a little..
+				#this is where i would put my horizontal wallkick.... IF I HAD ONE!
 		
 	#Handle landing animations
 	#if is_on_floor():
@@ -332,7 +319,35 @@ func _physics_process(delta: float) -> void:
 	
 	last_velocity = velocity	# used to see how hard the player lands.
 	
-	move_and_slide()
+	
+	#Wall... run?
+	if is_on_wall_only():	#triggers when player is only touching a wall, and nothing else. great start for the wallrun!
+		
+		wallruncounter += delta
+		print(wallruncounter)
+		
+		#if wallruncounter < max_wallruncounter and input_dir != Vector2.ZERO:	#use this to make the player mode into the wall to activate
+		if wallruncounter < max_wallruncounter:
+			is_wallrunning = true
+			var collision = get_last_slide_collision()
+			if collision:
+				var wall_normal = collision.get_normal()
+				var stick_force = 300.0  # Adjust as needed
+				print("Sticking to wall. Normal:", wall_normal)
+				velocity += -wall_normal * stick_force * delta
+		else: 
+			is_wallrunning = false
+		
+		if not wallrunPrint:
+			print("touching wall!")
+			wallrunPrint = true
+	else:
+		wallrunPrint = false
+		is_wallrunning = false
+		wallruncounter = 0.0
+
+	move_and_slide()	
+	
 
 func do_jump(charge):
 	print("crouch:", int(charge))
