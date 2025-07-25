@@ -30,7 +30,7 @@ var horizontal_velocity = Vector2(velocity.x, velocity.z)
 const jump_velocity = 7
 var crouch_counter = 0.0
 var min_crouch_counter = 5.0
-var max_crouch_counter = 11.0
+var max_crouch_counter = 10.0
 var is_charging = false
 
 # Wall system vars - SIMPLIFIED
@@ -71,7 +71,7 @@ var freelook_angle = 8
 
 # Air movement vars
 var air_control_force = 23.0  # adjust to how responsive air movement is
-var max_air_speed = 25.0  # Maximum horizontal speed in the air
+var max_air_speed = 7.5  # Maximum horizontal speed in the air
 
 # Input vars
 var direction = Vector3.ZERO
