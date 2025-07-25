@@ -1,7 +1,6 @@
 extends CharacterBody3D
 
 # Player nodes
-
 @onready var neck: Node3D = $neck
 @onready var head: Node3D = $neck/head
 @onready var eyes: Node3D = $neck/head/eyes
@@ -12,10 +11,7 @@ extends CharacterBody3D
 @onready var camera_3d: Camera3D = $neck/head/eyes/Camera3D
 @onready var animation_player: AnimationPlayer = $neck/head/eyes/AnimationPlayer
 
-
-
 # States
-
 var walking := false
 var sprinting := false
 var crouched := false
@@ -23,39 +19,35 @@ var freelook := false
 var sliding := false
 
 # Slide vars
-
 var slide_timer = 0.0
 var slide_timer_max = 1.0
 var slide_vector = Vector2.ZERO
 var slide_speed = 15
 
 # Jump vars
-
 var last_velocity = Vector3.ZERO
-
 var horizontal_velocity = Vector2(velocity.x, velocity.z)
-
 const jump_velocity = 7
-
 var crouch_counter = 0.0
 var min_crouch_counter = 5.0
 var max_crouch_counter = 11.0
 var is_charging = false
 
-# Wallrun vars
+# Wall system vars - SIMPLIFIED
+enum WallState {
+	NONE,
+	WALLRUNNING
+}
 
-var wallrunPrint = false
-var is_wallrunning = false
-var wallruncounter = 0.0
-var max_wallruncounter = 3	#delta counts starting from 0.... so this is actually 3 seconds
-var wallrunvelocityset = false
+var wall_state = WallState.NONE
+var wallrun_timer = 0.0
+var max_wallrun_time = 3.0
+var wallrun_velocity_set = false
 
 # Headbob vars
-
 const headbob_sprint_speed = 22
 const headbob_walk_speed = 14
 const headbob_crouch_speed = 10
-
 const headbob_sprint_intensity = 0.05
 const headbob_walk_intensity = 0.05
 const headbob_crouch_intensity = 0.05
@@ -64,46 +56,33 @@ var headbob_vector = Vector2.ZERO
 var headbob_index = 0
 var headbob_intensity = 0
 
-
-
-
-
-#Speed vars
-
+# Speed vars
 var current_speed = 5.0
-
 const walking_speed = 5.0
 const sprint_speed = 8.0
 const crouch_speed = 3.0
 var wallrun_speed = 20.0
 
 # Movement vars
-
 var crouch_depth = -0.5
 var lerp_speed = 10.0
 var air_lerp = 3
 var freelook_angle = 8
 
-
-
+# Air movement vars
+var air_control_force = 23.0  # adjust to how responsive air movement is
+var max_air_speed = 25.0  # Maximum horizontal speed in the air
 
 # Input vars
-
 var direction = Vector3.ZERO
 const mouse_sens = 0.25
-
-
-
-#used to track mouse. maybe add a pause menu!
 var mouseinput := true
 
 func _ready():
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _input(event):
-	
 	# Mouse move logic
-	
 	if event.is_action_pressed("esc"):
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 		mouseinput = false
@@ -114,7 +93,6 @@ func _input(event):
 			get_viewport().set_input_as_handled()
 		mouseinput = true
 		
-	
 	if mouseinput == true:
 		if event is InputEventMouseMotion:
 			if freelook:
@@ -125,54 +103,124 @@ func _input(event):
 			head.rotate_x(deg_to_rad(-event.relative.y * mouse_sens))
 			head.rotation.x = clamp(head.rotation.x, deg_to_rad(-90), deg_to_rad(90))
 
-func _physics_process(delta: float) -> void:
-	#getting movement input
+func _physics_process(delta: float) -> void:	
+	# Handle wall system timers
+	#handle_wall_timers(delta)
+	
+	# Getting movement input
 	var input_dir := Input.get_vector("left", "right", "forward", "backward")
 	horizontal_velocity = Vector2(velocity.x, velocity.z)
 	
-	
-	#wallruncounter += delta
-	#print("wallrun timer:", int(wallruncounter))
-	
 	if Input.is_action_just_pressed("debug"):
 		print("-------DEBUG-------")
+		print("wall_state:", WallState.keys()[wall_state])
 		print("walking:", walking)
 		print("sprinting:", sprinting)
-		print("crouched:", crouched)
-		print("freelooking:", freelook)
-		print("sliding:", sliding)
 		print("velocity.y:", velocity.y)
-		print("velocity.x:", velocity.x)
-		print("velocity.x:", velocity.z)
 		print("horiz velocity", horizontal_velocity.length())
-		print(get_gravity())
 	
-	if Input.is_action_just_pressed("reset"):		#in case you fall off.... idiot
+	if Input.is_action_just_pressed("reset"):
 		global_position = Vector3.ZERO
 		velocity = Vector3.ZERO
 		rotation = Vector3.ZERO
 		head.rotation = Vector3.ZERO
-		
-	# Handling movement states
+		reset_wall_state()
 	
+	# Handle movement states (crouching, sprinting, etc.)
+	handle_movement_states(delta, input_dir)
+	
+	# Handle freelook
+	handle_freelook(delta)
+	
+	# Handle sliding
+	handle_sliding(delta)
+	
+	# Handle headbob
+	handle_headbob(delta, input_dir)
+	
+	# Handle player movement
+	#print("Velocity BEFORE player movement: ", velocity)
+	#print("Current direction vector: ", direction)
+	handle_player_movement(delta, input_dir)
+	#print("Velocity AFTER player movement: ", velocity)
+	
+	# Handle wall system
+	handle_wall_system(delta, input_dir)
+	
+	# Handle gravity
+	handle_gravity(delta)
+	
+	last_velocity = velocity
+	move_and_slide()
+
+#func handle_wall_timers(delta: float):
+
+
+func handle_wall_system(delta: float, _input_dir: Vector2):
+	"""Centralized wall system handling"""
+	var touching_wall = is_on_wall_only()
+	
+	if touching_wall and wall_state == WallState.NONE:
+		# Start wallrunning
+		wall_state = WallState.WALLRUNNING
+		wallrun_timer = 0.0
+		wallrun_velocity_set = false
+		print("Started wallrunning")
+	
+	elif wall_state == WallState.WALLRUNNING:
+		if not touching_wall:
+			# Left the wall
+			reset_wall_state()
+			print("Left wall, ending wallrun")
+		else:
+			# Continue wallrunning
+			wallrun_timer += delta
+			if wallrun_timer >= max_wallrun_time:
+				reset_wall_state()
+				print("Wallrun time expired")
+			elif Input.is_action_just_pressed("jump"):
+				# Perform wallkick - just apply force and end wallrunning
+				perform_wallkick()
+				reset_wall_state()  # End wallrunning immediately
+
+func perform_wallkick():
+	"""Execute a wallkick - just apply force, no state management"""
+	var collision = get_last_slide_collision()
+	if collision:
+		var wall_normal = collision.get_normal()
+		print("WALLKICK! Normal:", wall_normal)
+		
+		# Apply strong force away from wall
+		var wall_kick_strength = 3.6  # Strong enough to clear the wall
+		velocity += wall_normal * wall_kick_strength
+		velocity.y = jump_velocity * 0.8
+		#direction = Vector3.ZERO #this just halts
+		
+func reset_wall_state():
+	"""Reset all wall-related state"""
+	wall_state = WallState.NONE
+	wallrun_timer = 0.0
+	wallrun_velocity_set = false
+
+func is_wallrunning() -> bool:
+	return wall_state == WallState.WALLRUNNING
+
+func handle_movement_states(delta: float, input_dir: Vector2):
+	"""Handle crouching, sprinting, walking states"""
 	# Crouching
-	if is_on_floor() and Input.is_action_pressed("crouch") or sliding:			#made this only if on floor cause i need a different type of crouch logic to have crouch jumping
+	if is_on_floor() and Input.is_action_pressed("crouch") or sliding:
 		current_speed = lerp(current_speed, crouch_speed, delta * lerp_speed)
-		head.position.y = lerp(head.position.y, crouch_depth, delta * lerp_speed)		#this moved the head camera down
+		head.position.y = lerp(head.position.y, crouch_depth, delta * lerp_speed)
 		standing_collision.disabled = true
-		crouched_collision.disabled = false		#change these two to changing the player height.y
+		crouched_collision.disabled = false
 		
 		if is_on_floor():
 			is_charging = true
 			crouch_counter += delta * 10.0
-			if crouch_counter > max_crouch_counter:
-				crouch_counter = max_crouch_counter
-			elif crouch_counter < min_crouch_counter:
-				crouch_counter = min_crouch_counter
-			print("crouch:", int(crouch_counter))	
+			crouch_counter = clamp(crouch_counter, min_crouch_counter, max_crouch_counter)
 		
-		#slide begin logic
-		if (horizontal_velocity.length() > 7 and sprinting and input_dir != Vector2.ZERO and is_on_floor()):		#i think this should have if horizontal_velocity.length() > 7 but when i put it, it runs infinitely instead of one time. gotta fix that
+		# Slide begin logic
+		if (horizontal_velocity.length() > 7 and sprinting and input_dir != Vector2.ZERO and is_on_floor()):
 			sliding = true
 			slide_timer = slide_timer_max
 			slide_vector = input_dir
@@ -187,35 +235,29 @@ func _physics_process(delta: float) -> void:
 		crouch_counter = 0.0
 	elif !ray_cast_3d.is_colliding():
 		# Uncrouching / Standing
-		
 		standing_collision.disabled = false
-		crouched_collision.disabled = true		#change these two to changing the player height.y in a function?
-		
+		crouched_collision.disabled = true
 		head.position.y = lerp(head.position.y, 0.0, delta * lerp_speed)
 		
-		if Input.is_action_just_released("crouch") and is_on_floor():		#im pretty sure this is getting broken by the above sprint thing, FIXED!!!!!!! jump takes priority over sprint
+		if Input.is_action_just_released("crouch") and is_on_floor():
 			do_jump(crouch_counter)
 		elif Input.is_action_pressed("sprint"):
 			# Sprinting
 			if is_on_floor():
 				current_speed = lerp(current_speed, sprint_speed, delta * lerp_speed/4)
-				if horizontal_velocity.length() > 7:		#this is here cause i wanna allow sliding to happen not just when sprinting. like TF2
+				if horizontal_velocity.length() > 7:
 					walking = false
 					sprinting = true
 					crouched = false
-					print("can sprint")
-				else:
-					print("can't sprint")
 		else:
 			# Walking
 			current_speed = lerp(current_speed, walking_speed, delta * lerp_speed)
-			
 			walking = true
 			sprinting = false
 			crouched = true
-	
-	# Freelook handler
-	
+
+func handle_freelook(delta: float):
+	"""Handle freelook camera behavior"""
 	if Input.is_action_pressed("freelook") or sliding:
 		freelook = true
 		if sliding:
@@ -226,21 +268,22 @@ func _physics_process(delta: float) -> void:
 		freelook = false
 		neck.rotation.y = lerp(neck.rotation.y, 0.0, delta * lerp_speed * 2.6)
 		eyes.rotation.z = lerp(eyes.rotation.z, 0.0, delta * lerp_speed * 2.6)
-	
-	# Sliding
-	
+
+func handle_sliding(delta: float):
+	"""Handle sliding mechanics"""
 	if sliding:
 		slide_timer -= delta
 		if slide_timer <= 0:
 			print("slide end via timer")
 			sliding = false
 			freelook = false
-		elif Input.is_action_just_released("crouch"):		#this should call a jump function for ease
+		elif Input.is_action_just_released("crouch"):
 			print("slide end via jump release")
 			freelook = false
 			do_jump(crouch_counter)
-	
-	 #Handle headbob
+
+func handle_headbob(delta: float, input_dir: Vector2):
+	"""Handle camera headbob"""
 	if sprinting:
 		headbob_intensity = headbob_sprint_intensity
 		headbob_index += headbob_sprint_speed * delta
@@ -260,99 +303,64 @@ func _physics_process(delta: float) -> void:
 	else:
 		eyes.position.y = lerp(eyes.position.y, 0.0, delta*lerp_speed)
 		eyes.position.x = lerp(eyes.position.x, 0.0, delta*lerp_speed)
+
+func handle_player_movement(delta: float, input_dir: Vector2):
+	"""Handle player movement with proper air control"""
 	
-	# Add the gravity.
-	if not is_on_floor():
-		if !is_wallrunning:
-			velocity += get_gravity() * delta
-			if Input.is_action_pressed("crouch"):		#FIXED!!!!!!! but now there needs to be a raycast checker for the floor bug
-				print("crouchJump")
-			elif Input.is_action_just_released("crouch"):
-				print("crouchJumpRelease")
+	if is_on_floor():
+		# Ground movement - direct velocity control (existing behavior)
+		direction = lerp(direction, (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized(), delta*lerp_speed)
+		
+		if sliding:
+			direction = (transform.basis * Vector3(slide_vector.x, 0, slide_vector.y)).normalized()
+			current_speed = (slide_timer + 0.1) * slide_speed
+		
+		# Apply movement - replace velocity on ground
+		if direction:
+			velocity.x = direction.x * current_speed
+			velocity.z = direction.z * current_speed
 		else:
-			if wallruncounter < 2.2:
-				if !wallrunvelocityset:
-					velocity.y = 0.0		#super jank. just illediatley halts vertical velocity when touching a wall in the air.
-				wallrunvelocityset = true
-				
+			velocity.x = move_toward(velocity.x, 0, current_speed)
+			velocity.z = move_toward(velocity.z, 0, current_speed)
+	
+	else:
+		# Air movement - additive control (preserve existing momentum)
+		if input_dir != Vector2.ZERO:
+			var input_vector = (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized()
+			
+			
+			# Add steering force to existing velocity instead of replacing it
+			velocity.x += input_vector.x * air_control_force * delta
+			velocity.z += input_vector.z * air_control_force * delta
+			
+			# Optional: Cap maximum horizontal speed to prevent infinite acceleration
+			var horizontal_vel = Vector2(velocity.x, velocity.z)
+			
+			if horizontal_vel.length() > max_air_speed:
+				horizontal_vel = horizontal_vel.normalized() * max_air_speed
+				velocity.x = horizontal_vel.x
+				velocity.z = horizontal_vel.y
+
+func handle_gravity(delta: float):
+	"""Handle gravity and wallrun physics"""
+	if not is_on_floor():
+		if not is_wallrunning():
+			velocity += get_gravity() * delta
+		else:
+			# Wallrunning physics
+			if wallrun_timer < 2.2:
+				if not wallrun_velocity_set:
+					velocity.y = 0.0  # Stop vertical movement
+				wallrun_velocity_set = true
 				current_speed = lerp(current_speed, wallrun_speed, delta * lerp_speed)
 			else:
 				print("beginning descent")
 				velocity += get_gravity()/3 * delta
-			#if Input.is_action_just_pressed("jump"):
-				#do_jump(10)		#for the wallkick to be done right, there needs to be a force applied away from the wall at the same time do jump is done. just enough to push a little..
-				#this is where i would put my horizontal wallkick.... IF I HAD ONE!
-		
-	#Handle landing animations
-	#if is_on_floor():
-		#if last_velocity.y < 0.0:
-			#print(last_velocity.y)		#when landing shows how hard we just landed. can be used to determine how the screenshake is.
-			#if last_velocity.y < -12.0:	#when velocity goes past -10
-				#print("roll")
-				#animation_player.play("roll")
-			#elif last_velocity.y < -7.0:
-				#print("hard fall")
-				#animation_player.play("hardlanding")
-			#elif last_velocity.y < -4.0:
-				#print("regular fall")
-				#animation_player.play("softlanding")
-	
-	# Player movement
-	
-	if is_on_floor():		#for floor control.
-		direction = lerp(direction, (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized(), delta*lerp_speed)
-	else:		#for air control. more floaty
-		if input_dir != Vector2.ZERO:
-			direction = lerp(direction, (transform.basis * Vector3(input_dir.x, 0, input_dir.y)).normalized(), delta*air_lerp)
-	
-	
-	if sliding:
-		direction = (transform.basis * Vector3(slide_vector.x, 0, slide_vector.y)).normalized()
-		current_speed = (slide_timer + 0.1) * slide_speed
-	
-	if direction:
-		velocity.x = direction.x * current_speed
-		velocity.z = direction.z * current_speed
-	else:
-		velocity.x = move_toward(velocity.x, 0, current_speed)
-		velocity.z = move_toward(velocity.z, 0, current_speed)
-	
-	last_velocity = velocity	# used to see how hard the player lands.
-	
-	
-	#Wall... run?
-	if is_on_wall_only():	#triggers when player is only touching a wall, and nothing else. great start for the wallrun!
-		
-		wallruncounter += delta
-		print(wallruncounter)
-		
-		#if wallruncounter < max_wallruncounter and input_dir != Vector2.ZERO:	#use this to make the player mode into the wall to activate
-		if wallruncounter < max_wallruncounter:
-			is_wallrunning = true
-			var collision = get_last_slide_collision()
-			if collision:
-				var wall_normal = collision.get_normal()
-				var stick_force = 300.0  # Adjust as needed
-				print("Sticking to wall. Normal:", wall_normal)
-				velocity += -wall_normal * stick_force * delta
-		else: 
-			is_wallrunning = false
-		
-		if not wallrunPrint:
-			print("touching wall!")
-			wallrunPrint = true
-	else:
-		wallrunPrint = false
-		is_wallrunning = false
-		wallruncounter = 0.0
-
-	move_and_slide()	
-	
 
 func do_jump(charge):
+	"""Execute a jump with charge"""
 	print("crouch:", int(charge))
-	
-	velocity.y = jump_velocity * charge/10	#YESSSSS!!!!!! THIS WORKS!!!!!!!!!!!!
+	velocity.y = jump_velocity * charge/10
 	sliding = false
 	is_charging = false
 	animation_player.play("jumping")
