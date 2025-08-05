@@ -329,6 +329,7 @@ shadow_enabled = true
 [node name="player" type="CharacterBody3D" parent="."]
 transform = Transform3D(-4.37114e-08, 0, -1, 0, 1, 0, 1, 0, -4.37114e-08, 3.3, 0, 0)
 script = ExtResource("3_sugp2")
+wall_kick_strength_vert = 6
 
 [node name="neck" type="Node3D" parent="player"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)

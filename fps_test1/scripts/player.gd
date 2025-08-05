@@ -57,8 +57,8 @@ var max_wallrun_time = 3.0
 var wallrun_velocity_set = false
 
 # Wallkick vars
-@export var wall_kick_strength_horiz = 3.6  # How far away?
-@export var wall_kick_strength_vert = jump_velocity * 0.9 # How high?
+@export var wall_kick_strength_horiz = 4  # How far away?
+@export var wall_kick_strength_vert = 5 # How high?
 
 # Headbob vars
 const headbob_sprint_speed = 22
@@ -444,14 +444,6 @@ func handle_air_to_slide_transition(was_airborne: bool):
 			var local_velocity = transform.basis.inverse() * world_velocity_normalized
 			slide_vector = Vector2(local_velocity.x, local_velocity.z)
 			
-
-			
-			# Convert slide vector back to world space to verify direction
-			var world_slide_direction = Vector3(slide_vector.x, 0, slide_vector.y)
-			
-			# Calculate angle between velocity and slide direction
-			var velocity_3d_normalized = Vector3(velocity.x, 0, velocity.z).normalized()
-						
 			# Start sliding
 			sliding = true
 			slide_timer = slide_timer_max
