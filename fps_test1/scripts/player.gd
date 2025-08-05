@@ -11,12 +11,24 @@ extends CharacterBody3D
 @onready var camera_3d: Camera3D = $neck/head/eyes/Camera3D
 @onready var animation_player: AnimationPlayer = $neck/head/eyes/AnimationPlayer
 
+# Debug States
+
+var debug_enabled = false
+
+var jump_enabled = true
+var slide_enabled = true
+var wallrun_enabled = true
+var wallkick_enabled = true
+
+
+
 # States
 var walking := false
 var sprinting := false
 var crouched := false
 var freelook := false
 var sliding := false
+var was_in_air = false
 
 # Slide vars
 var slide_timer = 0.0
@@ -27,10 +39,10 @@ var slide_speed = 15
 # Jump vars
 var last_velocity = Vector3.ZERO
 var horizontal_velocity = Vector2(velocity.x, velocity.z)
-const jump_velocity = 7
+@export var jump_velocity = 5
 var crouch_counter = 0.0
-var min_crouch_counter = 5.0
-var max_crouch_counter = 10.0
+@export var min_crouch_counter = 8.0
+@export var max_crouch_counter = 15.0
 var is_charging = false
 
 # Wall system vars - SIMPLIFIED
@@ -43,6 +55,10 @@ var wall_state = WallState.NONE
 var wallrun_timer = 0.0
 var max_wallrun_time = 3.0
 var wallrun_velocity_set = false
+
+# Wallkick vars
+@export var wall_kick_strength_horiz = 3.6  # How far away?
+@export var wall_kick_strength_vert = jump_velocity * 0.9 # How high?
 
 # Headbob vars
 const headbob_sprint_speed = 22
@@ -70,8 +86,8 @@ var air_lerp = 3
 var freelook_angle = 8
 
 # Air movement vars
-var air_control_force = 23.0  # adjust to how responsive air movement is
-var max_air_speed = 7.5  # Maximum horizontal speed in the air
+@export var air_control_force = 10.0  # adjust to how responsive air movement is
+@export var max_air_speed = 7.5  # Maximum horizontal speed in the air
 
 # Input vars
 var direction = Vector3.ZERO
@@ -82,6 +98,44 @@ func _ready():
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _input(event):
+	
+	# Feature enablers
+	
+	if event.is_action_pressed("debug_abilities"):
+		debug_enabled = !debug_enabled
+		
+		if debug_enabled:
+			jump_enabled = false
+			slide_enabled = false
+			wallrun_enabled = false
+			wallkick_enabled = false
+			print("debug time!")
+		else:
+			jump_enabled = true
+			slide_enabled = true
+			wallrun_enabled = true
+			wallkick_enabled = true
+			print("Bye bye debug!")
+	
+	
+	if event.is_action_pressed("jump_enable") and debug_enabled:
+		jump_enabled = true
+		print("jump enabled!")
+		
+	if event.is_action_pressed("slide_enable") and debug_enabled:
+		slide_enabled = true
+		print("slide enabled!")
+		
+	if event.is_action_pressed("wallrun_enable") and debug_enabled:
+		wallrun_enabled = true
+		print("wallrun enabled!")
+		
+	if event.is_action_pressed("wallkick_enable") and debug_enabled:
+		wallkick_enabled = true
+		print("wallkick enabled!")
+	
+	
+	
 	# Mouse move logic
 	if event.is_action_pressed("esc"):
 		Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
@@ -139,10 +193,7 @@ func _physics_process(delta: float) -> void:
 	handle_headbob(delta, input_dir)
 	
 	# Handle player movement
-	#print("Velocity BEFORE player movement: ", velocity)
-	#print("Current direction vector: ", direction)
 	handle_player_movement(delta, input_dir)
-	#print("Velocity AFTER player movement: ", velocity)
 	
 	# Handle wall system
 	handle_wall_system(delta, input_dir)
@@ -150,8 +201,15 @@ func _physics_process(delta: float) -> void:
 	# Handle gravity
 	handle_gravity(delta)
 	
+	var was_airborne = not is_on_floor()
+	
 	last_velocity = velocity
 	move_and_slide()
+	
+	# Check for air-to-ground transition slide
+	handle_air_to_slide_transition(was_airborne)
+	
+	was_in_air = was_airborne
 
 #func handle_wall_timers(delta: float):
 
@@ -160,7 +218,7 @@ func handle_wall_system(delta: float, _input_dir: Vector2):
 	"""Centralized wall system handling"""
 	var touching_wall = is_on_wall_only()
 	
-	if touching_wall and wall_state == WallState.NONE:
+	if touching_wall and wallrun_enabled and wall_state == WallState.NONE:
 		# Start wallrunning
 		wall_state = WallState.WALLRUNNING
 		wallrun_timer = 0.0
@@ -178,7 +236,7 @@ func handle_wall_system(delta: float, _input_dir: Vector2):
 			if wallrun_timer >= max_wallrun_time:
 				reset_wall_state()
 				print("Wallrun time expired")
-			elif Input.is_action_just_pressed("jump"):
+			elif Input.is_action_just_pressed("jump") and wallkick_enabled:
 				# Perform wallkick - just apply force and end wallrunning
 				perform_wallkick()
 				reset_wall_state()  # End wallrunning immediately
@@ -191,9 +249,8 @@ func perform_wallkick():
 		print("WALLKICK! Normal:", wall_normal)
 		
 		# Apply strong force away from wall
-		var wall_kick_strength = 3.6  # Strong enough to clear the wall
-		velocity += wall_normal * wall_kick_strength
-		velocity.y = jump_velocity * 0.8
+		velocity += wall_normal * wall_kick_strength_horiz
+		velocity.y = wall_kick_strength_vert
 		#direction = Vector3.ZERO #this just halts
 		
 func reset_wall_state():
@@ -208,11 +265,16 @@ func is_wallrunning() -> bool:
 func handle_movement_states(delta: float, input_dir: Vector2):
 	"""Handle crouching, sprinting, walking states"""
 	# Crouching
-	if is_on_floor() and Input.is_action_pressed("crouch") or sliding:
+	if is_on_floor() and jump_enabled and Input.is_action_pressed("crouch") or sliding:
+		
+		# Do crouch stuff
+		
 		current_speed = lerp(current_speed, crouch_speed, delta * lerp_speed)
 		head.position.y = lerp(head.position.y, crouch_depth, delta * lerp_speed)
 		standing_collision.disabled = true
 		crouched_collision.disabled = false
+		
+		# If touching floor, charge jump to  be used later
 		
 		if is_on_floor():
 			is_charging = true
@@ -220,7 +282,7 @@ func handle_movement_states(delta: float, input_dir: Vector2):
 			crouch_counter = clamp(crouch_counter, min_crouch_counter, max_crouch_counter)
 		
 		# Slide begin logic
-		if (horizontal_velocity.length() > 7 and sprinting and input_dir != Vector2.ZERO and is_on_floor()):
+		if (horizontal_velocity.length() > 7 and sprinting and input_dir != Vector2.ZERO and slide_enabled and is_on_floor()):
 			sliding = true
 			slide_timer = slide_timer_max
 			slide_vector = input_dir
@@ -231,15 +293,15 @@ func handle_movement_states(delta: float, input_dir: Vector2):
 		sprinting = false
 		crouched = true
 		
-	elif ray_cast_3d.is_colliding():
+	elif ray_cast_3d.is_colliding():	# If im under something!
 		crouch_counter = 0.0
-	elif !ray_cast_3d.is_colliding():
+	elif !ray_cast_3d.is_colliding():	# If nothing above me
 		# Uncrouching / Standing
 		standing_collision.disabled = false
 		crouched_collision.disabled = true
 		head.position.y = lerp(head.position.y, 0.0, delta * lerp_speed)
 		
-		if Input.is_action_just_released("crouch") and is_on_floor():
+		if Input.is_action_just_released("crouch") and jump_enabled and is_on_floor():
 			do_jump(crouch_counter)
 		elif Input.is_action_pressed("sprint"):
 			# Sprinting
@@ -271,7 +333,7 @@ func handle_freelook(delta: float):
 
 func handle_sliding(delta: float):
 	"""Handle sliding mechanics"""
-	if sliding:
+	if sliding:		
 		slide_timer -= delta
 		if slide_timer <= 0:
 			print("slide end via timer")
@@ -365,3 +427,41 @@ func do_jump(charge):
 	is_charging = false
 	animation_player.play("jumping")
 	crouch_counter = 0.0
+	
+func handle_air_to_slide_transition(was_airborne: bool):
+	"""Handle sliding when landing from air with speed and crouch held"""
+	if was_airborne and slide_enabled and is_on_floor():  # Just landed
+		var horizontal_speed = Vector2(velocity.x, velocity.z).length()
+		
+		# If moving fast enough, holding crouch, and have horizontal momentum
+		if horizontal_speed >= sprint_speed/2 and Input.is_action_pressed("crouch"):
+			print("=== AIR-TO-SLIDE TRANSITION ===")
+			print("Landing speed:", horizontal_speed)
+
+			
+			# Convert velocity to local space slide vector (matching coordinate system)
+			var world_velocity_normalized = Vector3(velocity.x, 0, velocity.z).normalized()
+			var local_velocity = transform.basis.inverse() * world_velocity_normalized
+			slide_vector = Vector2(local_velocity.x, local_velocity.z)
+			
+
+			
+			# Convert slide vector back to world space to verify direction
+			var world_slide_direction = Vector3(slide_vector.x, 0, slide_vector.y)
+			
+			# Calculate angle between velocity and slide direction
+			var velocity_3d_normalized = Vector3(velocity.x, 0, velocity.z).normalized()
+						
+			# Start sliding
+			sliding = true
+			slide_timer = slide_timer_max
+			
+			# Enable freelook for slide
+			freelook = true
+			
+			# Set appropriate collision and states
+			standing_collision.disabled = true
+			crouched_collision.disabled = false
+			crouched = true
+			walking = false
+			sprinting = false
