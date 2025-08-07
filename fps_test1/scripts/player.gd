@@ -10,6 +10,9 @@ extends CharacterBody3D
 @onready var ray_cast_3d: RayCast3D = $RayCast3D
 @onready var camera_3d: Camera3D = $neck/head/eyes/Camera3D
 @onready var animation_player: AnimationPlayer = $neck/head/eyes/AnimationPlayer
+@onready var interactcast: RayCast3D = $neck/head/eyes/interactcast
+
+
 
 # Debug States
 
@@ -93,6 +96,27 @@ var freelook_angle = 8
 var direction = Vector3.ZERO
 const mouse_sens = 0.25
 var mouseinput := true
+
+# Interaction stuff
+var lastInteraction
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 func _ready():
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
@@ -205,11 +229,15 @@ func _physics_process(delta: float) -> void:
 	
 	last_velocity = velocity
 	move_and_slide()
-	
 	# Check for air-to-ground transition slide
 	handle_air_to_slide_transition(was_airborne)
 	
 	was_in_air = was_airborne
+	
+	# Handle interactions
+	handle_interactions_raycast()
+	
+	
 
 #func handle_wall_timers(delta: float):
 
@@ -457,3 +485,58 @@ func handle_air_to_slide_transition(was_airborne: bool):
 			crouched = true
 			walking = false
 			sprinting = false
+			
+			
+			
+
+func handle_interactions_raycast():
+	#if interactcast.is_colliding():
+		#var collider = interactcast.get_collider()
+		#print(collider.name)
+		#if collider and collider.name == "InteractBox" and Input.is_action_just_pressed("use"):
+			#toggle_interactbox(collider)
+			
+	if interactcast.is_colliding():
+		
+		var hit = interactcast.get_collider()
+		
+		
+		print(hit.name)		#print the name of the thing colliding
+		print(is_floor(hit))#is it a floor??
+		if lastInteraction:
+			print("last interactable object:", lastInteraction.name)
+		if hit and hit.name == "InteractBox" and Input.is_action_just_pressed("use"):
+			lastInteraction = hit
+			toggle_interactbox(lastInteraction)
+			
+		elif lastInteraction and lastInteraction.name == "InteractBox" and is_floor(hit) and Input.is_action_just_pressed("use"):
+			print("box should move here!")
+			
+			move_interactbox_to_floor(interactcast.get_collision_point(), lastInteraction)
+			lastInteraction = null
+	
+func toggle_interactbox(box: Node) -> bool:
+	var is_visible = box.visible
+	box.visible = !is_visible
+
+	var shape = box.get_node_or_null("CollisionShape3D")
+	if shape:
+		shape.disabled = is_visible
+	if is_visible:
+		return true
+	else: return false
+
+func is_floor(collider: Object) -> bool:
+	# Option 1: use node name
+	if collider.name.begins_with("floor"):
+		return true
+	else: return false
+
+func move_interactbox_to_floor(point: Vector3, box: Node):	
+	var new_position = box.global_position
+	new_position.x = point.x
+	new_position.z = point.z
+	# Optionally snap Y to ground height
+	box.global_position = new_position
+	
+	toggle_interactbox(box)  # Make it reappear
