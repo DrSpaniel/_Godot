@@ -1,12 +1,16 @@
-[gd_scene load_steps=28 format=3 uid="uid://cjbikouypipmf"]
+[gd_scene load_steps=35 format=3 uid="uid://cjbikouypipmf"]
 
 [ext_resource type="Texture2D" uid="uid://dfp06ckqptyhw" path="res://assets/textures/dev/grids/Dark/texture_07.png" id="1_0wfyh"]
+[ext_resource type="Texture2D" uid="uid://5uk4u1huv7oh" path="res://assets/textures/dev/animals/fox.jpg" id="2_choun"]
 [ext_resource type="Texture2D" uid="uid://dpgmgw3yg17w8" path="res://assets/textures/dev/grids/Orange/texture_05.png" id="2_jyhfs"]
 [ext_resource type="Texture2D" uid="uid://bf5whxdc6f0y3" path="res://assets/hdris/kloofendal_48d_partly_cloudy_puresky_2k.hdr" id="2_sugp2"]
+[ext_resource type="ArrayMesh" uid="uid://bc7m4f8upg57y" path="res://assets/models/apple.obj" id="2_tipki"]
 [ext_resource type="Script" uid="uid://utfc3poh4t1l" path="res://scenes/cow.gd" id="3_o6xl0"]
 [ext_resource type="Script" uid="uid://b2m324gp5gnk4" path="res://scripts/player.gd" id="3_sugp2"]
 [ext_resource type="Texture2D" uid="uid://c50anf5gdpkak" path="res://assets/textures/dev/animals/cow.png" id="3_tbgi4"]
 [ext_resource type="AudioStream" uid="uid://cepmd57m3qp3b" path="res://assets/audio/moo.mp3" id="5_tipki"]
+[ext_resource type="AudioStream" uid="uid://c2xixp1dx1j14" path="res://assets/audio/fox.mp3" id="6_choun"]
+[ext_resource type="ArrayMesh" uid="uid://t72fu8as6uhr" path="res://assets/models/banana.obj" id="7_85g3d"]
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_k0juu"]
 albedo_texture = ExtResource("1_0wfyh")
@@ -27,6 +31,15 @@ material = SubResource("StandardMaterial3D_tefeu")
 
 [sub_resource type="StandardMaterial3D" id="StandardMaterial3D_o6xl0"]
 albedo_texture = ExtResource("3_tbgi4")
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ya4ey"]
+albedo_texture = ExtResource("2_choun")
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_tipki"]
+
+[sub_resource type="CapsuleShape3D" id="CapsuleShape3D_85g3d"]
+radius = 0.274019
+height = 1.49
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_71j4m"]
 panorama = ExtResource("2_sugp2")
@@ -349,28 +362,64 @@ height = 41.25
 sides = 64
 material = SubResource("StandardMaterial3D_tbgi4")
 
-[node name="InteractBox" type="StaticBody3D" parent="stage"]
+[node name="obj_InteractBox" type="StaticBody3D" parent="stage"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.5, -9.3)
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="stage/InteractBox"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="stage/obj_InteractBox"]
 shape = SubResource("BoxShape3D_sugp2")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="stage/InteractBox"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="stage/obj_InteractBox"]
 mesh = SubResource("BoxMesh_sugp2")
 
-[node name="cow" type="StaticBody3D" parent="stage"]
+[node name="ent_cow" type="StaticBody3D" parent="stage"]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 10, 0.5, -14.3)
 script = ExtResource("3_o6xl0")
 
-[node name="CollisionShape3D" type="CollisionShape3D" parent="stage/cow"]
+[node name="CollisionShape3D" type="CollisionShape3D" parent="stage/ent_cow"]
 shape = SubResource("BoxShape3D_sugp2")
 
-[node name="MeshInstance3D" type="MeshInstance3D" parent="stage/cow"]
+[node name="MeshInstance3D" type="MeshInstance3D" parent="stage/ent_cow"]
 material_override = SubResource("StandardMaterial3D_o6xl0")
 mesh = SubResource("BoxMesh_sugp2")
 
-[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="stage/cow"]
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="stage/ent_cow"]
 stream = ExtResource("5_tipki")
+
+[node name="ent_fox" type="StaticBody3D" parent="stage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 7, 0.5, -14.3)
+script = ExtResource("3_o6xl0")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="stage/ent_fox"]
+shape = SubResource("BoxShape3D_sugp2")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="stage/ent_fox"]
+material_override = SubResource("StandardMaterial3D_ya4ey")
+mesh = SubResource("BoxMesh_sugp2")
+
+[node name="AudioStreamPlayer3D" type="AudioStreamPlayer3D" parent="stage/ent_fox"]
+stream = ExtResource("6_choun")
+
+[node name="obj_apple" type="StaticBody3D" parent="stage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 0)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="stage/obj_apple"]
+transform = Transform3D(3, 0, 0, 0, 3, 0, 0, 0, 3, 0, 0, 0)
+mesh = ExtResource("2_tipki")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="stage/obj_apple"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.2, 0)
+shape = SubResource("SphereShape3D_tipki")
+
+[node name="obj_banana" type="StaticBody3D" parent="stage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 9, 0, 2)
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="stage/obj_banana"]
+transform = Transform3D(2, 0, 0, 0, 2, 0, 0, 0, 2, 0, 0, 0)
+mesh = ExtResource("7_85g3d")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="stage/obj_banana"]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, -1, 0, 1, -4.37114e-08, 0, 0.2, 0)
+shape = SubResource("CapsuleShape3D_85g3d")
 
 [node name="env" type="Node3D" parent="."]
 

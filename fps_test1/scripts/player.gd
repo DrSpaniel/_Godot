@@ -100,6 +100,7 @@ var mouseinput := true
 
 # Interaction stuff
 var lastInteraction
+var is_holding = false
 
 
 
@@ -504,36 +505,43 @@ func handle_interactions_raycast() -> Object:
 		var hit = interactcast.get_collider()
 		var normal = interactcast.get_collision_normal()
 		
-		print(hit.name)		#print the name of the thing colliding
-		print("Hit normal:", normal)
-		print(is_floor(normal))#is it a floor??
 		if lastInteraction:
 			print("last interactable object:", lastInteraction.name)
-		if hit and hit.name == "InteractBox" and Input.is_action_just_pressed("use"):
-			lastInteraction = hit
-			toggle_interactbox(lastInteraction)
+		if !is_holding and hit and hit.name.begins_with("obj") and Input.is_action_just_pressed("use"):	#checks if i interacted with interactBox, to be changed
+			lastInteraction = hit	#this is to differenciate what im looking at with what i just interacted with. this is to then be able to use said object onto something else.
+			toggle_interactbox(lastInteraction, 0)
+			is_holding = true
 			
-		elif lastInteraction and lastInteraction.name == "InteractBox" and Input.is_action_just_pressed("use") and !lastInteraction.visible:
-			print("box should move here!")
-			if hit.name == "cow":	#when i am holding box, and i am looking at the cow, then give the cow the apple
-				print("moo!")
-				hit.play_sound()
+		elif is_floor(normal) and is_holding and lastInteraction and Input.is_action_just_pressed("use") and !lastInteraction.visible:
+			print(lastInteraction.name, " should move here!")
+			print("looking at", hit.name)		#print the name of the thing colliding
+			if lastInteraction.name.begins_with("obj_") and hit.name.begins_with("ent_"):	#giving animal fruit
+				print(lastInteraction.name, " given to ", hit.name)	#this is dynamic for the other animals to useas well
+				if lastInteraction.name.ends_with("apple") and hit.name.ends_with("cow"):
+					#this is when you feed the cow the apple. you gain the ability to jump.
+					jump_enabled = true
+					is_holding = false	#the animal ate it!
+					hit.play_sound()
+				elif lastInteraction.name.ends_with("banana") and hit.name.ends_with("fox"):
+					slide_enabled = true
+					hit.play_sound()
+					is_holding = false	#the animal ate it!
 				
 			else:
 				move_interactbox_to_floor(interactcast.get_collision_point(), lastInteraction)
 			lastInteraction = null	#this is outside the if else so any sort of interaction at all will just remove the object.
 	
-	return lastInteraction	#returns last touched object
+	return lastInteraction	#returns last object interacted with
 	
-	
-	
-func toggle_interactbox(box: Node):
-	var is_visible = box.visible
-	box.visible = !is_visible
 
+func toggle_interactbox(box: Node, toggle: bool):
 	var shape = box.get_node_or_null("CollisionShape3D")
-	if shape:
-		shape.disabled = is_visible
+	if toggle:
+		box.visible = true
+		shape.disabled = false
+	else:
+		box.visible = false
+		shape.disabled = true
 
 func is_floor(collider: Vector3) -> bool:
 	# Option 1: use node name
@@ -544,20 +552,21 @@ func is_floor(collider: Vector3) -> bool:
 func move_interactbox_to_floor(point: Vector3, box: Node):	
 	var new_position = box.global_position
 	new_position.x = point.x
-	new_position.y = point.y + 0.5	#this is a terrible way to solve this issue, only works for the box for now, should probably fix this later.
+	new_position.y = point.y	#this is a terrible way to solve this issue, only works for the box for now, should probably fix this later.
 	new_position.z = point.z
 	# Optionally snap Y to ground height
 	box.global_position = new_position
 	
-	toggle_interactbox(box)  # Make it reappear
-
+	toggle_interactbox(box, 1)  # Make it reappear
+	is_holding = false
 
 func handle_viewmodel(object: Object):
 	#idea here is to pass thru what object is being held, then change the viewmodel depending on that
-	if lastInteraction and lastInteraction.name == "InteractBox":
-		print("holding box")
-		texture_rect.visible = true
+	if lastInteraction:
+		print("holding ", lastInteraction.name)
+		texture_rect.visible = true	#supposed to be 2d viewmodel
 	elif !lastInteraction:
 		print("holding nothing")
 		texture_rect.visible = false
 	return
+	
