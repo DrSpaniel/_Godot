@@ -114,7 +114,7 @@ func _input(event):
 			jump_enabled = false
 			crouch_enabled = false
 			wallrun_enabled = false
-			wallkick_enabled = false
+			wallkick_enabled = true
 			print("debug time!")
 		else:
 			jump_enabled = true
