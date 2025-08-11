@@ -19,8 +19,11 @@ extends CharacterBody3D
 
 var debug_enabled = false
 
+# in order: crouch/slide, jump, wallrun, wallkick
+
+
+var crouch_enabled = true
 var jump_enabled = true
-var slide_enabled = true
 var wallrun_enabled = true
 var wallkick_enabled = true
 
@@ -131,31 +134,31 @@ func _input(event):
 		
 		if debug_enabled:
 			jump_enabled = false
-			slide_enabled = false
+			crouch_enabled = false
 			wallrun_enabled = false
 			wallkick_enabled = false
 			print("debug time!")
 		else:
 			jump_enabled = true
-			slide_enabled = true
+			crouch_enabled = true
 			wallrun_enabled = true
 			wallkick_enabled = true
 			print("Bye bye debug!")
 	
 	
-	if event.is_action_pressed("jump_enable") and debug_enabled:
+	if event.is_action_pressed("num1") and debug_enabled:
+		crouch_enabled = true
+		print("crouch enabled!")
+		
+	if event.is_action_pressed("num2") and debug_enabled:
 		jump_enabled = true
 		print("jump enabled!")
 		
-	if event.is_action_pressed("slide_enable") and debug_enabled:
-		slide_enabled = true
-		print("slide enabled!")
-		
-	if event.is_action_pressed("wallrun_enable") and debug_enabled:
+	if event.is_action_pressed("num3") and debug_enabled:
 		wallrun_enabled = true
 		print("wallrun enabled!")
 		
-	if event.is_action_pressed("wallkick_enable") and debug_enabled:
+	if event.is_action_pressed("num4") and debug_enabled:
 		wallkick_enabled = true
 		print("wallkick enabled!")
 	
@@ -297,7 +300,7 @@ func is_wallrunning() -> bool:
 func handle_movement_states(delta: float, input_dir: Vector2):
 	"""Handle crouching, sprinting, walking states"""
 	# Crouching
-	if is_on_floor() and jump_enabled and Input.is_action_pressed("crouch") or sliding:
+	if is_on_floor() and crouch_enabled and Input.is_action_pressed("crouch") or sliding:
 		
 		# Do crouch stuff
 		
@@ -314,7 +317,7 @@ func handle_movement_states(delta: float, input_dir: Vector2):
 			crouch_counter = clamp(crouch_counter, min_crouch_counter, max_crouch_counter)
 		
 		# Slide begin logic
-		if (horizontal_velocity.length() > 7 and sprinting and input_dir != Vector2.ZERO and slide_enabled and is_on_floor()):
+		if (horizontal_velocity.length() > 7 and sprinting and input_dir != Vector2.ZERO and is_on_floor()):
 			sliding = true
 			slide_timer = slide_timer_max
 			slide_vector = input_dir
@@ -329,9 +332,7 @@ func handle_movement_states(delta: float, input_dir: Vector2):
 		crouch_counter = 0.0
 	elif !ray_cast_3d.is_colliding():	# If nothing above me
 		# Uncrouching / Standing
-		standing_collision.disabled = false
-		crouched_collision.disabled = true
-		head.position.y = lerp(head.position.y, 0.0, delta * lerp_speed)
+		crouch(1, delta)
 		
 		if Input.is_action_just_released("crouch") and jump_enabled and is_on_floor():
 			do_jump(crouch_counter)
@@ -372,9 +373,13 @@ func handle_sliding(delta: float):
 			sliding = false
 			freelook = false
 		elif Input.is_action_just_released("crouch"):
-			print("slide end via jump release")
-			freelook = false
-			do_jump(crouch_counter)
+			if jump_enabled:
+				print("slide end via jump release")
+				freelook = false
+				do_jump(crouch_counter)
+			else:
+				print("uncrouch!")
+				crouch(0, delta)
 
 func handle_headbob(delta: float, input_dir: Vector2):
 	"""Handle camera headbob"""
@@ -462,7 +467,7 @@ func do_jump(charge):
 	
 func handle_air_to_slide_transition(was_airborne: bool):
 	"""Handle sliding when landing from air with speed and crouch held"""
-	if was_airborne and slide_enabled and is_on_floor():  # Just landed
+	if was_airborne and crouch_enabled and is_on_floor():  # Just landed
 		var horizontal_speed = Vector2(velocity.x, velocity.z).length()
 		
 		# If moving fast enough, holding crouch, and have horizontal momentum
@@ -485,7 +490,8 @@ func handle_air_to_slide_transition(was_airborne: bool):
 			
 			# Set appropriate collision and states
 			standing_collision.disabled = true
-			crouched_collision.disabled = false
+			
+			
 			crouched = true
 			walking = false
 			sprinting = false
@@ -514,16 +520,20 @@ func handle_interactions_raycast() -> Object:
 			
 		elif is_floor(normal) and is_holding and lastInteraction and Input.is_action_just_pressed("use") and !lastInteraction.visible:
 			print(lastInteraction.name, " should move here!")
-			print("looking at", hit.name)		#print the name of the thing colliding
+			print("looking at ", hit.name)		#print the name of the thing colliding
 			if lastInteraction.name.begins_with("obj_") and hit.name.begins_with("ent_"):	#giving animal fruit
 				print(lastInteraction.name, " given to ", hit.name)	#this is dynamic for the other animals to useas well
 				if lastInteraction.name.ends_with("apple") and hit.name.ends_with("cow"):
 					#this is when you feed the cow the apple. you gain the ability to jump.
-					jump_enabled = true
+					crouch_enabled = true
 					is_holding = false	#the animal ate it!
 					hit.play_sound()
 				elif lastInteraction.name.ends_with("banana") and hit.name.ends_with("fox"):
-					slide_enabled = true
+					jump_enabled = true
+					hit.play_sound()
+					is_holding = false	#the animal ate it!
+				elif lastInteraction.name.ends_with("grape") and hit.name.ends_with("chimp"):
+					wallrun_enabled = true
 					hit.play_sound()
 					is_holding = false	#the animal ate it!
 				
@@ -562,6 +572,7 @@ func move_interactbox_to_floor(point: Vector3, box: Node):
 
 func handle_viewmodel(object: Object):
 	#idea here is to pass thru what object is being held, then change the viewmodel depending on that
+	#FOR LATER: show the icon of the animal that fruit should be given to
 	if lastInteraction:
 		print("holding ", lastInteraction.name)
 		texture_rect.visible = true	#supposed to be 2d viewmodel
@@ -570,3 +581,17 @@ func handle_viewmodel(object: Object):
 		texture_rect.visible = false
 	return
 	
+func crouch(crouch: bool, delta):
+	if crouch:
+		crouched = true
+		head.position.y = lerp(head.position.y, 0.0, delta * lerp_speed)
+		standing_collision.disabled = false
+		crouched_collision.disabled = true
+		
+	else:
+		crouched = false
+		current_speed = lerp(current_speed, crouch_speed, delta * lerp_speed)
+		head.position.y = lerp(head.position.y, crouch_depth, delta * lerp_speed)
+		standing_collision.disabled = true
+		crouched_collision.disabled = false
+		print("UNcrouch via function")
