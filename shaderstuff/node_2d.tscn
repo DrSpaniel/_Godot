@@ -1,0 +1,71 @@
+[gd_scene load_steps=15 format=3 uid="uid://cuqftu1th2o2i"]
+
+[ext_resource type="Shader" uid="uid://cuywbay8xhcrm" path="res://grass.tres" id="1_0e48y"]
+[ext_resource type="Texture2D" uid="uid://d3e0lnyfvrt7i" path="res://icon.svg" id="2_epypp"]
+[ext_resource type="Shader" uid="uid://c7psr4cpdnkqg" path="res://grass.gdshader" id="3_epypp"]
+[ext_resource type="Texture2D" uid="uid://ghqy8j1ukg5u" path="res://guy.png" id="4_0hol4"]
+[ext_resource type="Shader" uid="uid://byk85hkgds5yy" path="res://colourReplace.tres" id="4_q6r6c"]
+[ext_resource type="Shader" uid="uid://bif1rlbspsvl2" path="res://colourReplace_better.tres" id="6_kdubu"]
+[ext_resource type="Script" uid="uid://cvbmxuryayrfa" path="res://colorreplacement.gd" id="7_d21ai"]
+[ext_resource type="Shader" uid="uid://c32a2gpuutqka" path="res://colorReplace_better.gdshader" id="8_rj586"]
+[ext_resource type="Script" uid="uid://cv2d1f0xc6o6" path="res://guy_3.gd" id="9_4d7sh"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_0hol4"]
+shader = ExtResource("1_0e48y")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_q6r6c"]
+shader = ExtResource("3_epypp")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_kdubu"]
+shader = ExtResource("4_q6r6c")
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_d21ai"]
+shader = ExtResource("6_kdubu")
+shader_parameter/ColorParameter = Color(0.659762, 0.496257, 0.761979, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_4d7sh"]
+shader = ExtResource("8_rj586")
+shader_parameter/replacement_color = Color(0.118853, 0.558767, 0.4193, 1)
+
+[node name="Node2D" type="Node2D"]
+
+[node name="Icon" type="Sprite2D" parent="."]
+material = SubResource("ShaderMaterial_0hol4")
+position = Vector2(197, 122)
+texture = ExtResource("2_epypp")
+
+[node name="Icon2" type="Sprite2D" parent="."]
+material = SubResource("ShaderMaterial_q6r6c")
+position = Vector2(415, 123)
+texture = ExtResource("2_epypp")
+
+[node name="ColorPicker" type="ColorPicker" parent="."]
+offset_left = 778.0
+offset_top = 31.0
+offset_right = 1076.0
+offset_bottom = 603.0
+color = Color(0.145098, 0.168627, 0.203922, 1)
+color_mode = 2
+
+[node name="Guy" type="Sprite2D" parent="."]
+material = SubResource("ShaderMaterial_kdubu")
+position = Vector2(211, 384)
+scale = Vector2(0.662162, 0.662162)
+texture = ExtResource("4_0hol4")
+
+[node name="Guy2" type="Sprite2D" parent="."]
+material = SubResource("ShaderMaterial_d21ai")
+position = Vector2(409, 390.369)
+scale = Vector2(0.680502, 0.680502)
+texture = ExtResource("4_0hol4")
+script = ExtResource("7_d21ai")
+
+[node name="Guy3" type="Sprite2D" parent="."]
+material = SubResource("ShaderMaterial_4d7sh")
+position = Vector2(633, 416)
+scale = Vector2(0.727799, 0.727799)
+texture = ExtResource("4_0hol4")
+script = ExtResource("9_4d7sh")
+
+[connection signal="color_changed" from="ColorPicker" to="Guy2" method="_on_color_picker_color_changed"]
+[connection signal="color_changed" from="ColorPicker" to="Guy3" method="_on_color_picker_color_changed"]
