@@ -94,7 +94,6 @@ void vertex() {
 
 }
 "
-graph_offset = Vector2(-937.896, 215.819)
 mode = 1
 flags/light_only = false
 nodes/vertex/2/node = SubResource("VisualShaderNodeInput_45nfk")

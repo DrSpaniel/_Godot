@@ -1,4 +1,4 @@
-[gd_scene load_steps=15 format=3 uid="uid://cuqftu1th2o2i"]
+[gd_scene load_steps=18 format=3 uid="uid://cuqftu1th2o2i"]
 
 [ext_resource type="Shader" uid="uid://cuywbay8xhcrm" path="res://grass.tres" id="1_0e48y"]
 [ext_resource type="Texture2D" uid="uid://d3e0lnyfvrt7i" path="res://icon.svg" id="2_epypp"]
@@ -9,6 +9,8 @@
 [ext_resource type="Script" uid="uid://cvbmxuryayrfa" path="res://colorreplacement.gd" id="7_d21ai"]
 [ext_resource type="Shader" uid="uid://c32a2gpuutqka" path="res://colorReplace_better.gdshader" id="8_rj586"]
 [ext_resource type="Script" uid="uid://cv2d1f0xc6o6" path="res://guy_3.gd" id="9_4d7sh"]
+[ext_resource type="Shader" uid="uid://5x5u7h4ebgrg" path="res://pixelate.gdshader" id="10_hqns4"]
+[ext_resource type="Script" uid="uid://dhx2aku4unb86" path="res://guy_4.gd" id="11_x0ka3"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_0hol4"]
 shader = ExtResource("1_0e48y")
@@ -26,6 +28,10 @@ shader_parameter/ColorParameter = Color(0.659762, 0.496257, 0.761979, 1)
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_4d7sh"]
 shader = ExtResource("8_rj586")
 shader_parameter/replacement_color = Color(0.118853, 0.558767, 0.4193, 1)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_0h7mo"]
+shader = ExtResource("10_hqns4")
+shader_parameter/amount = 40
 
 [node name="Node2D" type="Node2D"]
 
@@ -49,23 +55,40 @@ color_mode = 2
 
 [node name="Guy" type="Sprite2D" parent="."]
 material = SubResource("ShaderMaterial_kdubu")
-position = Vector2(211, 384)
+position = Vector2(108, 395)
 scale = Vector2(0.662162, 0.662162)
 texture = ExtResource("4_0hol4")
 
 [node name="Guy2" type="Sprite2D" parent="."]
 material = SubResource("ShaderMaterial_d21ai")
-position = Vector2(409, 390.369)
+position = Vector2(301, 397)
 scale = Vector2(0.680502, 0.680502)
 texture = ExtResource("4_0hol4")
 script = ExtResource("7_d21ai")
 
 [node name="Guy3" type="Sprite2D" parent="."]
 material = SubResource("ShaderMaterial_4d7sh")
-position = Vector2(633, 416)
+position = Vector2(486, 402)
 scale = Vector2(0.727799, 0.727799)
 texture = ExtResource("4_0hol4")
 script = ExtResource("9_4d7sh")
 
+[node name="Guy4" type="Sprite2D" parent="."]
+material = SubResource("ShaderMaterial_0h7mo")
+position = Vector2(676, 453)
+scale = Vector2(0.700772, 0.700772)
+texture = ExtResource("4_0hol4")
+script = ExtResource("11_x0ka3")
+
+[node name="HSlider" type="HSlider" parent="."]
+offset_left = 558.0
+offset_top = 196.0
+offset_right = 743.0
+offset_bottom = 229.0
+min_value = 1.0
+value = 100.0
+rounded = true
+
 [connection signal="color_changed" from="ColorPicker" to="Guy2" method="_on_color_picker_color_changed"]
 [connection signal="color_changed" from="ColorPicker" to="Guy3" method="_on_color_picker_color_changed"]
+[connection signal="value_changed" from="HSlider" to="Guy4" method="_on_h_slider_value_changed"]
