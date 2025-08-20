@@ -1,0 +1,14 @@
+[gd_scene load_steps=3 format=3 uid="uid://dwsn22u46g63g"]
+
+[ext_resource type="PackedScene" uid="uid://cp648qf3en3yr" path="res://objectscenes/sphere1.tscn" id="1_pmwbe"]
+
+[sub_resource type="Environment" id="Environment_a83ia"]
+glow_enabled = true
+
+[node name="mainscene" type="Node3D"]
+
+[node name="Node3D" parent="." instance=ExtResource("1_pmwbe")]
+
+[node name="Camera3D" type="Camera3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0.273279, 0.973979)
+environment = SubResource("Environment_a83ia")

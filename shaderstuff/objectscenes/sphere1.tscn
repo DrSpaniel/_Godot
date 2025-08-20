@@ -1,0 +1,20 @@
+[gd_scene load_steps=4 format=3 uid="uid://cp648qf3en3yr"]
+
+[ext_resource type="Shader" uid="uid://pahtc64rc22u" path="res://objectscenes/dissolve.tres" id="1_mi7g8"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_06rdg"]
+render_priority = 0
+shader = ExtResource("1_mi7g8")
+shader_parameter/base_color = Color(1, 1, 1, 1)
+shader_parameter/dissolveheight = 0.0
+shader_parameter/noisescale = -0.3
+shader_parameter/noisesize = 17.45
+
+[sub_resource type="SphereMesh" id="SphereMesh_06rdg"]
+
+[node name="Node3D" type="Node3D"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.00787082, 0)
+material_override = SubResource("ShaderMaterial_06rdg")
+mesh = SubResource("SphereMesh_06rdg")
