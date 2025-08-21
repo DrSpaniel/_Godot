@@ -6,9 +6,11 @@
 render_priority = 0
 shader = ExtResource("1_mi7g8")
 shader_parameter/base_color = Color(1, 1, 1, 1)
-shader_parameter/dissolveheight = 0.0
-shader_parameter/noisescale = -0.3
-shader_parameter/noisesize = 17.45
+shader_parameter/dissolveheight = 0.385
+shader_parameter/noisescale = 0.32
+shader_parameter/noisesize = 8.365
+shader_parameter/glow_edge = 0.145
+shader_parameter/edge_color = Color(18.784, 0, 16.575, 1)
 
 [sub_resource type="SphereMesh" id="SphereMesh_06rdg"]
 

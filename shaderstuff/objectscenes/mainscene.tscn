@@ -1,8 +1,18 @@
-[gd_scene load_steps=3 format=3 uid="uid://dwsn22u46g63g"]
+[gd_scene load_steps=6 format=3 uid="uid://dwsn22u46g63g"]
 
 [ext_resource type="PackedScene" uid="uid://cp648qf3en3yr" path="res://objectscenes/sphere1.tscn" id="1_pmwbe"]
+[ext_resource type="Texture2D" uid="uid://bf5whxdc6f0y3" path="res://hdris/kloofendal_48d_partly_cloudy_puresky_2k.hdr" id="2_a83ia"]
+
+[sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_isueb"]
+panorama = ExtResource("2_a83ia")
+
+[sub_resource type="Sky" id="Sky_3e67y"]
+sky_material = SubResource("PanoramaSkyMaterial_isueb")
 
 [sub_resource type="Environment" id="Environment_a83ia"]
+background_mode = 2
+sky = SubResource("Sky_3e67y")
+tonemap_mode = 2
 glow_enabled = true
 
 [node name="mainscene" type="Node3D"]
