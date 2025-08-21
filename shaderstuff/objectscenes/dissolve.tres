@@ -1,4 +1,4 @@
-[gd_resource type="VisualShader" load_steps=29 format=3 uid="uid://pahtc64rc22u"]
+[gd_resource type="VisualShader" load_steps=30 format=3 uid="uid://pahtc64rc22u"]
 
 [ext_resource type="Script" uid="uid://dk1vecxty2koe" path="res://objectscenes/perlinnoise3d.gd" id="1_ubvs2"]
 
@@ -46,15 +46,17 @@ input_name = "time"
 function = 1
 
 [sub_resource type="VisualShaderNodeFloatOp" id="VisualShaderNodeFloatOp_r0qwr"]
-default_input_values = [0, 0.0, 1, 0.2]
+default_input_values = [0, 0.0, 1, 0.5]
 operator = 2
 
 [sub_resource type="VisualShaderNodeFloatFunc" id="VisualShaderNodeFloatFunc_pb4dg"]
 function = 0
 
 [sub_resource type="VisualShaderNodeFloatOp" id="VisualShaderNodeFloatOp_6n2ac"]
-default_input_values = [0, 0.0, 1, 0.001]
+default_input_values = [0, 0.0, 1, 0.2]
 operator = 2
+
+[sub_resource type="VisualShaderNodeFloatConstant" id="VisualShaderNodeFloatConstant_ubvs2"]
 
 [sub_resource type="VisualShaderNodeFloatConstant" id="VisualShaderNodeFloatConstant_bd2oa"]
 constant = 0.5
@@ -238,32 +240,23 @@ void fragment() {
 	float n_out21p0 = TIME;
 
 
-// FloatOp:24
-	float n_in24p1 = 0.20000;
-	float n_out24p0 = n_out21p0 * n_in24p1;
+// FloatFunc:23
+	float n_out23p0 = cos(n_out21p0);
 
 
-// FloatFunc:25
-	float n_out25p0 = sin(n_out24p0);
+// FloatOp:26
+	float n_in26p1 = 0.20000;
+	float n_out26p0 = n_out23p0 * n_in26p1;
 
 
 // FloatParameter:10
 	float n_out10p0 = noisesize;
 
 
-// FloatFunc:23
-	float n_out23p0 = cos(n_out21p0);
-
-
-// FloatOp:26
-	float n_in26p1 = 0.00100;
-	float n_out26p0 = n_out23p0 * n_in26p1;
-
-
 	float n_out8p0;
 // PerlinNoise3D:8
 	{
-		n_out8p0 = cnoise(vec3((n_out4p0.xy + vec3(n_out25p0).xy) * n_out10p0, n_out26p0)) * 0.5 + 0.5;
+		n_out8p0 = cnoise(vec3((n_out4p0.xy + vec3(n_out26p0).xy) * n_out10p0, n_out21p0)) * 0.5 + 0.5;
 	}
 
 
@@ -271,9 +264,17 @@ void fragment() {
 	float n_out13p0 = n_out11p0 * n_out8p0;
 
 
+// FloatOp:24
+	float n_in24p1 = 0.50000;
+	float n_out24p0 = n_out21p0 * n_in24p1;
+
+
+// FloatFunc:25
+	float n_out25p0 = sin(n_out24p0);
+
+
 // FloatOp:12
-	float n_in12p1 = 0.00000;
-	float n_out12p0 = n_out11p0 * n_in12p1;
+	float n_out12p0 = n_out11p0 * n_out25p0;
 
 
 // FloatOp:15
@@ -325,7 +326,7 @@ void fragment() {
 
 }
 "
-graph_offset = Vector2(-3262.3, 572.887)
+graph_offset = Vector2(-2209.11, 312.487)
 modes/cull = 2
 varyings/worldpos = "0,4"
 nodes/vertex/2/node = SubResource("VisualShaderNodeVaryingSetter_bd2oa")
@@ -356,13 +357,13 @@ nodes/fragment/10/position = Vector2(-3300, 1140)
 nodes/fragment/11/node = SubResource("VisualShaderNodeFloatParameter_6h5f7")
 nodes/fragment/11/position = Vector2(-2780, 360)
 nodes/fragment/12/node = SubResource("VisualShaderNodeFloatOp_ubvs2")
-nodes/fragment/12/position = Vector2(-2040, 600)
+nodes/fragment/12/position = Vector2(-2060, 560)
 nodes/fragment/13/node = SubResource("VisualShaderNodeFloatOp_6h5f7")
-nodes/fragment/13/position = Vector2(-2040, 800)
+nodes/fragment/13/position = Vector2(-2060, 380)
 nodes/fragment/14/node = SubResource("VisualShaderNodeFloatOp_gefnd")
 nodes/fragment/14/position = Vector2(-1460, 680)
 nodes/fragment/15/node = SubResource("VisualShaderNodeFloatOp_uhex3")
-nodes/fragment/15/position = Vector2(-1740, 560)
+nodes/fragment/15/position = Vector2(-1720, 560)
 nodes/fragment/16/node = SubResource("VisualShaderNodeFloatParameter_gefnd")
 nodes/fragment/16/position = Vector2(-1240, 900)
 nodes/fragment/17/node = SubResource("VisualShaderNodeFloatOp_vcjwh")
@@ -383,4 +384,6 @@ nodes/fragment/25/node = SubResource("VisualShaderNodeFloatFunc_pb4dg")
 nodes/fragment/25/position = Vector2(-3460, 800)
 nodes/fragment/26/node = SubResource("VisualShaderNodeFloatOp_6n2ac")
 nodes/fragment/26/position = Vector2(-3240, 960)
-nodes/fragment/connections = PackedInt32Array(3, 0, 0, 19, 4, 0, 8, 0, 4, 2, 14, 1, 5, 0, 6, 0, 6, 0, 7, 0, 14, 0, 6, 1, 8, 0, 13, 1, 10, 0, 8, 2, 11, 0, 12, 0, 11, 0, 13, 0, 12, 0, 15, 1, 13, 0, 15, 0, 15, 0, 14, 0, 2, 0, 0, 0, 5, 0, 17, 0, 16, 0, 17, 1, 17, 0, 18, 0, 14, 0, 18, 1, 7, 0, 0, 1, 18, 0, 20, 0, 19, 0, 20, 1, 20, 0, 0, 5, 21, 0, 23, 0, 21, 0, 24, 0, 24, 0, 25, 0, 25, 0, 8, 1, 23, 0, 26, 0, 26, 0, 8, 3)
+nodes/fragment/27/node = SubResource("VisualShaderNodeFloatConstant_ubvs2")
+nodes/fragment/27/position = Vector2(-3220, 740)
+nodes/fragment/connections = PackedInt32Array(4, 0, 8, 0, 5, 0, 6, 0, 6, 0, 7, 0, 14, 0, 6, 1, 8, 0, 13, 1, 10, 0, 8, 2, 11, 0, 12, 0, 11, 0, 13, 0, 12, 0, 15, 1, 13, 0, 15, 0, 15, 0, 14, 0, 5, 0, 17, 0, 16, 0, 17, 1, 17, 0, 18, 0, 14, 0, 18, 1, 18, 0, 20, 0, 19, 0, 20, 1, 21, 0, 23, 0, 21, 0, 24, 0, 24, 0, 25, 0, 23, 0, 26, 0, 21, 0, 8, 3, 26, 0, 8, 1, 4, 2, 14, 1, 25, 0, 12, 1, 2, 0, 0, 0, 3, 0, 0, 19, 20, 0, 0, 5, 7, 0, 0, 1)
