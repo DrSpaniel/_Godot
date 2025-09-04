@@ -1,0 +1,22 @@
+[gd_scene load_steps=5 format=3 uid="uid://ybrepqdxihlt"]
+
+[ext_resource type="Shader" uid="uid://cx2x0kob6sjtf" path="res://objectscenes/holo.tres" id="1_cyw8o"]
+[ext_resource type="Texture2D" uid="uid://b22q7miqgplxf" path="res://HologramLines.png" id="2_tlq8v"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_tlq8v"]
+render_priority = 0
+shader = ExtResource("1_cyw8o")
+shader_parameter/scanlinescroll = 0.1
+shader_parameter/scanlinescale = 10.0
+shader_parameter/scanlinetexture = ExtResource("2_tlq8v")
+shader_parameter/scanlinecolor = Color(0.894179, 0.895405, 0.893579, 0.216)
+shader_parameter/powerl = 2.0
+shader_parameter/fresnel_color = Color(0.366424, 0.0940783, 0.21122, 0.47)
+
+[sub_resource type="SphereMesh" id="SphereMesh_x4oua"]
+
+[node name="Node3D" type="Node3D"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+material_override = SubResource("ShaderMaterial_tlq8v")
+mesh = SubResource("SphereMesh_x4oua")
