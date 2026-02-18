@@ -1,7 +1,8 @@
-[gd_scene load_steps=6 format=3 uid="uid://dwsn22u46g63g"]
+[gd_scene load_steps=7 format=3 uid="uid://dwsn22u46g63g"]
 
 [ext_resource type="PackedScene" uid="uid://cp648qf3en3yr" path="res://objectscenes/sphere1.tscn" id="1_pmwbe"]
 [ext_resource type="Texture2D" uid="uid://bf5whxdc6f0y3" path="res://hdris/kloofendal_48d_partly_cloudy_puresky_2k.hdr" id="2_a83ia"]
+[ext_resource type="PackedScene" uid="uid://ybrepqdxihlt" path="res://objectscenes/sphere2.tscn" id="3_isueb"]
 
 [sub_resource type="PanoramaSkyMaterial" id="PanoramaSkyMaterial_isueb"]
 panorama = ExtResource("2_a83ia")
@@ -14,11 +15,20 @@ background_mode = 2
 sky = SubResource("Sky_3e67y")
 tonemap_mode = 2
 glow_enabled = true
+glow_intensity = 1.4
+glow_bloom = 0.14
+glow_hdr_scale = 1.76
+glow_hdr_luminance_cap = 0.5
 
 [node name="mainscene" type="Node3D"]
 
 [node name="Node3D" parent="." instance=ExtResource("1_pmwbe")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.6, 0, 0)
 
 [node name="Camera3D" type="Camera3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 0.965926, 0.258819, 0, -0.258819, 0.965926, 0, 0.273279, 0.973979)
+transform = Transform3D(1, 0, 0, 0, 0.984808, 0.173648, 0, -0.173648, 0.984808, 0, 0.273279, 1.97398)
 environment = SubResource("Environment_a83ia")
+fov = 49.8033
+
+[node name="Node3D2" parent="." instance=ExtResource("3_isueb")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.6, 0, 0)

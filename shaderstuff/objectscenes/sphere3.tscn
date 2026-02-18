@@ -1,0 +1,20 @@
+[gd_scene load_steps=5 format=3 uid="uid://l7jekcahtbr4"]
+
+[ext_resource type="Shader" uid="uid://c7bh8ihq1h24y" path="res://objectscenes/outline.tres" id="1_3vevi"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_vnib6"]
+render_priority = 0
+shader = ExtResource("1_3vevi")
+shader_parameter/outlinesize = 0.03
+shader_parameter/base_color = Color(0, 0, 0, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_vnib6"]
+next_pass = SubResource("ShaderMaterial_vnib6")
+
+[sub_resource type="SphereMesh" id="SphereMesh_vnib6"]
+
+[node name="Node3D" type="Node3D"]
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+material_override = SubResource("StandardMaterial3D_vnib6")
+mesh = SubResource("SphereMesh_vnib6")

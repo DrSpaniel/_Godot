@@ -57,7 +57,7 @@ enum WallState {
 
 var wall_state = WallState.NONE
 var wallrun_timer = 0.0
-var max_wallrun_time = 3.0
+var max_wallrun_time = 15.0
 var wallrun_velocity_set = false
 
 # Wallkick vars
@@ -479,6 +479,7 @@ func handle_gravity(delta: float):
 			else:
 				print("beginning descent")
 				velocity += get_gravity()/3 * delta
+	
 
 func do_jump(charge):
 	"""Execute a jump with charge"""
